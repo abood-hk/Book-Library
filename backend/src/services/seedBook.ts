@@ -26,9 +26,9 @@ const fetchWorkDetails = async (olid: string, signal: AbortSignal) => {
     return { description, subjects };
   } catch (err) {
     if ((err as Error).name === 'CanceledError') {
-      console.log(`⚠️ Request for work ${olid} was cancelled`);
+      console.log(`Request for work ${olid} was cancelled`);
     } else {
-      console.error(`❌ Failed to fetch work ${olid}:`, (err as Error).message);
+      console.error(`Failed to fetch work ${olid}:`, (err as Error).message);
     }
     return { description: '', subjects: [] };
   }
@@ -49,10 +49,10 @@ const fetchAllEditionIsbns = async (
       if (Array.isArray(res.data.isbn_13)) allIsbns.push(...res.data.isbn_13);
     } catch (err) {
       if ((err as Error).name === 'CanceledError') {
-        console.log(`⚠️ Request for edition ${editionOlid} was cancelled`);
+        console.log(`Request for edition ${editionOlid} was cancelled`);
       } else {
         console.warn(
-          `⚠️ Failed to fetch edition ${editionOlid}:`,
+          `Failed to fetch edition ${editionOlid}:`,
           (err as Error).message
         );
       }
@@ -106,7 +106,7 @@ const fetchBookIfNotFound = async (query: string) => {
       : doc.author_name;
     const editionKeys = doc.edition_key || [];
 
-    // ❌ Do NOT pass searchController.signal here
+    // Do NOT pass searchController.signal here
     const isbns = await fetchAllEditionIsbns(
       editionKeys,
       new AbortController().signal
@@ -136,10 +136,10 @@ const fetchBookIfNotFound = async (query: string) => {
     return newBook;
   } catch (err) {
     if ((err as Error).name === 'CanceledError') {
-      console.log(`⚠️ Request for "${query}" was cancelled`);
+      console.log(`Request for "${query}" was cancelled`);
     } else {
       console.error(
-        `❌ Failed to fetch/save book "${query}":`,
+        `Failed to fetch/save book "${query}":`,
         (err as Error).message
       );
     }

@@ -2,8 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import './config/db.js';
+import './config/redis.js';
 import booksRouter from './routes/booksRoutes.js';
 import logger from './middleware/loggerMiddleware.js';
+import usersRouter from './routes/usersRoutes.js';
 
 dotenv.config();
 
@@ -15,8 +17,9 @@ app.use(express.json());
 
 app.use(logger);
 
-app.use('/api', booksRouter);
+app.use('/api/books', booksRouter);
+app.use('/api/users', usersRouter);
 
 app.listen(PORT, () => {
-  console.log(`🚀 Backend running at http://localhost:${PORT}`);
+  console.log(`Backend running at http://localhost:${PORT}`);
 });

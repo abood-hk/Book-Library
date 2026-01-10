@@ -4,6 +4,7 @@ interface IUser extends Document {
   username: string;
   email: string;
   password: string;
+  role: 'user' | 'admin';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -37,6 +38,11 @@ const userSchema = new Schema<IUser>(
       maxLength: 20,
       required: true,
       select: false,
+    },
+    role: {
+      type: String,
+      enum: ['user', 'admin'],
+      default: 'user',
     },
   },
   { timestamps: true }
