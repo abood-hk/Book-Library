@@ -1,5 +1,9 @@
 import express from 'express';
-import { loginUser, signupUser } from '../controllers/usersController.js';
+import {
+  loginUser,
+  signupUser,
+  regenerateToken,
+} from '../controllers/usersController.js';
 import {
   emailValidator,
   passwordValidator,
@@ -14,6 +18,13 @@ usersRouter.post(
   [emailValidator, passwordValidator, usernameValidate, validate],
   signupUser
 );
-usersRouter.post('/login', loginUser);
+
+usersRouter.post(
+  '/login',
+  [emailValidator, passwordValidator, validate],
+  loginUser
+);
+
+usersRouter.post('/refresh', regenerateToken);
 
 export default usersRouter;
