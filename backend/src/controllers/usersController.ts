@@ -108,6 +108,35 @@ export const signupUser = async (req: Request, res: Response) => {
   }
 };
 
+export const logoutUser = async (req: Request, res: Response) => {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+    });
+
+    if (refreshToken && process.env.REFRESH_TOKEN_SECRET) {
+      try {
+        const payload = jwt.verify(
+          refreshToken,
+          process.env.REFRESH_TOKEN_SECRET
+        ) as IPayload;
+
+        redis.del(`rt:${payload.userId}`);
+      } catch {
+        return res.status(200).json({ message: 'Logout succesfully' });
+      }
+    }
+
+    return res.status(200).json({ message: 'Logout succesfully' });
+  } catch {
+    return res.status(500).json({ message: 'Logout failed' });
+  }
+};
+
 export const regenerateToken = async (req: Request, res: Response) => {
   try {
     const refreshToken = req.cookies.refreshToken;

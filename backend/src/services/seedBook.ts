@@ -2,16 +2,13 @@ import axios from 'axios';
 import BooksModel from '../models/Book.js';
 
 interface OpenLibraryDoc {
-  key: string; // e.g., "/works/OL12345W"
+  key: string;
   title: string;
   author_name?: string[];
   edition_key?: string[];
   cover_i?: number;
 }
 
-// -------------------- Helpers --------------------
-
-// Fetch description + subjects from a Work
 const fetchWorkDetails = async (olid: string, signal: AbortSignal) => {
   try {
     const res = await axios.get(`https://openlibrary.org/works/${olid}.json`, {
@@ -61,31 +58,25 @@ const fetchAllEditionIsbns = async (
   return Array.from(new Set(allIsbns));
 };
 
-// Check if title contains query in order
 const titleMatchesQuery = (title: string, query: string) =>
   title.toLowerCase().includes(query.toLowerCase());
-
-// -------------------- Main Function --------------------
 
 let currentSearchController: AbortController | null = null;
 
 const fetchBookIfNotFound = async (query: string) => {
   if (!query?.trim()) return null;
 
-  // cancel previous search request
   if (currentSearchController) currentSearchController.abort();
 
   const searchController = new AbortController();
   currentSearchController = searchController;
 
   try {
-    // check DB first
     const existingBook = await BooksModel.findOne({
       title: { $regex: new RegExp(query, 'i') },
     });
     if (existingBook) return existingBook;
 
-    // main search request
     const searchRes = await axios.get(
       `https://openlibrary.org/search.json?q=${encodeURIComponent(
         query
@@ -106,7 +97,6 @@ const fetchBookIfNotFound = async (query: string) => {
       : doc.author_name;
     const editionKeys = doc.edition_key || [];
 
-    // Do NOT pass searchController.signal here
     const isbns = await fetchAllEditionIsbns(
       editionKeys,
       new AbortController().signal
@@ -145,7 +135,6 @@ const fetchBookIfNotFound = async (query: string) => {
     }
     return null;
   } finally {
-    // clear controller only if it’s the same request
     if (currentSearchController === searchController)
       currentSearchController = null;
   }

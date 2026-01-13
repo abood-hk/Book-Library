@@ -3,6 +3,7 @@ import {
   loginUser,
   signupUser,
   regenerateToken,
+  logoutUser,
 } from '../controllers/usersController.js';
 import {
   emailValidator,
@@ -24,6 +25,8 @@ usersRouter.post(
   [emailValidator, passwordValidator, validate],
   loginUser
 );
+
+usersRouter.post('/logout', logoutUser);
 
 usersRouter.post('/refresh', regenerateToken);
 
