@@ -15,6 +15,9 @@ const favouritesSchema = new Schema<IFavourites>(
   { timestamps: true }
 );
 
+favouritesSchema.index({ user: 1 });
+favouritesSchema.index({ user: 1, book: 1 }, { unique: true });
+
 const FavouriteModel = mongoose.model<IFavourites>(
   'favourites',
   favouritesSchema

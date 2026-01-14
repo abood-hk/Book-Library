@@ -1,4 +1,8 @@
 export interface IAccessPayload {
-  userId: string;
+  _id: string;
   role: 'user' | 'admin';
+}
+
+export interface IRefreshPayload {
+  userId: string;
 }

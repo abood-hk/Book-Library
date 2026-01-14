@@ -11,7 +11,7 @@ interface IBook extends Document {
   categories: string[];
 }
 
-const bookSchema = new Schema<IBook>(
+export const bookSchema = new Schema<IBook>(
   {
     olid: {
       type: String,

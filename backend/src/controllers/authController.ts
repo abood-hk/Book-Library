@@ -8,12 +8,9 @@ import {
   genAccessToken,
   genRefreshToken,
 } from '../services/tokenGeneration.js';
+import { IRefreshPayload } from '../interfaces/IPayload.js';
 
 dotenv.config();
-
-interface IPayload {
-  userId: string;
-}
 
 export const loginUser = async (req: Request, res: Response) => {
   try {
@@ -123,7 +120,7 @@ export const logoutUser = async (req: Request, res: Response) => {
         const payload = jwt.verify(
           refreshToken,
           process.env.REFRESH_TOKEN_SECRET
-        ) as IPayload;
+        ) as IRefreshPayload;
 
         redis.del(`rt:${payload.userId}`);
       } catch {
@@ -153,7 +150,7 @@ export const regenerateToken = async (req: Request, res: Response) => {
     const payload = jwt.verify(
       refreshToken,
       process.env.REFRESH_TOKEN_SECRET
-    ) as IPayload;
+    ) as IRefreshPayload;
 
     const user = await userModel.findById(payload.userId);
 
