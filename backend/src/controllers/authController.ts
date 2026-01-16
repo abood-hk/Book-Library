@@ -99,7 +99,7 @@ export const signupUser = async (req: Request, res: Response) => {
     ) {
       const keyValue = (err as { keyValue: Record<string, string> }).keyValue;
       const feild = Object.keys(keyValue)[0];
-      return res.status(400).json({ message: `${feild} already exists` });
+      return res.status(409).json({ message: `${feild} already exists` });
     }
     return res.status(500).json({ message: 'Server error' });
   }
