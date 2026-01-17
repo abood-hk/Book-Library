@@ -7,6 +7,7 @@ import './config/redis.js';
 import booksRouter from './routes/booksRoutes.js';
 import logger from './middleware/loggerMiddleware.js';
 import usersRouter from './routes/usersRoutes.js';
+import adminRouter from './routes/adminRoutes.js';
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.use(logger);
 
 app.use('/api/books', booksRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/admin', adminRouter);
 
 app.listen(PORT, () => {
   console.log(`Backend running at http://localhost:${PORT}`);

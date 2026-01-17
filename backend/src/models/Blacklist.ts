@@ -1,19 +1,13 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import { IBook } from './Book.js';
+import mongoose, { Schema } from 'mongoose';
 
-export interface IBook extends Document {
-  olid: string;
-  isbns?: string[];
-  primaryEditionOlid?: string;
-  cover_i?: number;
-  title: string;
-  author_name: string;
-  description: string;
-  categories: string[];
+interface IBlacklist extends IBook {
+  addedBy: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export const bookSchema = new Schema<IBook>(
+const blacklistSchema = new Schema<IBlacklist>(
   {
     olid: {
       type: String,
@@ -49,12 +43,13 @@ export const bookSchema = new Schema<IBook>(
       type: [String],
       required: true,
     },
+    addedBy: { type: Schema.Types.ObjectId, ref: 'users', required: true },
   },
   {
     timestamps: true,
   }
 );
 
-const BooksModel = mongoose.model<IBook>('books', bookSchema);
+const BlacklistModel = mongoose.model<IBlacklist>('blacklist', blacklistSchema);
 
-export default BooksModel;
+export default BlacklistModel;

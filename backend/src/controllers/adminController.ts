@@ -1,0 +1,67 @@
+import { Request, Response } from 'express';
+import mongoose from 'mongoose';
+import ReviewsModel from '../models/Reviews.js';
+import BooksModel from '../models/Book.js';
+import BlacklistModel from '../models/Blacklist.js';
+
+export const adminRemoveReview = async (req: Request, res: Response) => {
+  const { reviewId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(reviewId)) {
+    return res.status(400).json({ message: 'Invalid review id' });
+  }
+
+  try {
+    const result = await ReviewsModel.deleteOne({ _id: reviewId });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+    return res.status(200).json({ message: 'Review deleted successfully' });
+  } catch {
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const blacklistBook = async (req: Request, res: Response) => {
+  const { bookOlid } = req.params;
+  const user = req.user!;
+
+  try {
+    const book = await BooksModel.findOne({ olid: bookOlid }).lean();
+
+    if (!book) {
+      return res.status(404).json({ message: 'Book not found' });
+    }
+
+    const alreadyBlacklisted = await BlacklistModel.exists({ olid: bookOlid });
+    if (alreadyBlacklisted) {
+      return res.status(409).json({ message: 'Book already blacklisted' });
+    }
+
+    await BlacklistModel.create({ ...book, addedBy: user._id });
+    await BooksModel.deleteOne({ olid: bookOlid });
+    return res.status(201).json({ message: 'Book added to blacklist' });
+  } catch {
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const removeFromBlacklist = async (req: Request, res: Response) => {
+  const { bookOlid } = req.params;
+
+  try {
+    const book = await BlacklistModel.findOne({ olid: bookOlid })
+      .select('-_id -__v -createdAt -updatedAt -addedBy')
+      .lean();
+    if (!book) {
+      return res.status(404).json({ message: 'Book not found' });
+    }
+
+    await BooksModel.create(book);
+    await BlacklistModel.deleteOne({ olid: bookOlid });
+
+    return res.status(200).json({ message: 'Book removed from blacklist' });
+  } catch {
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
