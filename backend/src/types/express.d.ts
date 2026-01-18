@@ -1,4 +1,4 @@
-import { IAccessPayload } from '../interfaces/IPayload';
+import { IAccessPayload } from '../interfaces/IPayload.js';
 
 declare global {
   namespace Express {

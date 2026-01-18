@@ -6,7 +6,7 @@ const adminOnly = (req: Request, res: Response, next: NextFunction) => {
   if (!user) {
     return res.status(401).json({ message: 'Authentication required' });
   }
-  if (user.role !== 'admin') {
+  if (user.role !== 'admin' && user.role !== 'super admin') {
     return res.status(403).json({ message: 'Admin access required' });
   }
 
