@@ -66,3 +66,22 @@ export const removeFromFavourites = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Server error' });
   }
 };
+
+export const getFavouritesIds = async (req: Request, res: Response) => {
+  const user = req.user;
+  if (!user) {
+    return res.status(401).json({ message: 'User not authorized' });
+  }
+
+  try {
+    const favourites = await FavouriteModel.find({ user: user._id }).select(
+      'book -_id',
+    );
+
+    const favouritesIds = favourites.map((f) => f.book.toString());
+
+    return res.status(200).json(favouritesIds);
+  } catch {
+    return res.status(500).json({ message: 'Server error' });
+  }
+};

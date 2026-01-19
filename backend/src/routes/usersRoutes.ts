@@ -17,6 +17,7 @@ import {
   addToFavourites,
   showFavourites,
   removeFromFavourites,
+  getFavouritesIds,
 } from '../controllers/favouriteController.js';
 import {
   addReview,
@@ -31,16 +32,17 @@ const usersRouter = express.Router();
 usersRouter.post(
   '/signup',
   [emailValidator, passwordValidator, usernameValidate, validate],
-  signupUser
+  signupUser,
 );
 usersRouter.post(
   '/login',
   [emailValidator, passwordValidator, validate],
-  loginUser
+  loginUser,
 );
 usersRouter.post('/logout', logoutUser);
 
 usersRouter.get('/favourites', auth, showFavourites);
+usersRouter.get('/favouritesIds', auth, getFavouritesIds);
 usersRouter.post('/refresh', regenerateToken);
 usersRouter.post('/favourites/:bookId', auth, addToFavourites);
 usersRouter.delete('/favourites/:bookId', auth, removeFromFavourites);
@@ -49,12 +51,12 @@ usersRouter.get('/reviews/:bookId', getReviews);
 usersRouter.post(
   '/reviews/:bookId',
   [auth, ratingValidate, contentValidate, validate],
-  addReview
+  addReview,
 );
 usersRouter.put(
   '/reviews/:bookId',
   [auth, ratingValidate, contentValidate, validate],
-  updateReview
+  updateReview,
 );
 usersRouter.delete('/reviews/:bookId', auth, removeReview);
 
