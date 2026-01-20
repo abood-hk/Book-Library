@@ -25,12 +25,14 @@ const Books = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState<number>(30);
+  const [sort, setSort] = useState<string>('default');
   const [totalPages, setTotalPages] = useState(1);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const oldSortRef = useRef<string>(sort);
   const oldLimitRef = useRef<number>(limit);
   const oldSelectedCategoriesRef = useRef(selectedCategories);
   const oldSearchRef = useRef(search);
@@ -43,6 +45,10 @@ const Books = () => {
       const newPage = Math.floor(oldOffset / limit) + 1;
       setPage(newPage);
       oldLimitRef.current = limit;
+    }
+    if (sort !== oldSortRef.current) {
+      setPage(1);
+      oldSortRef.current = sort;
     }
     if (oldSelectedCategoriesRef.current !== selectedCategories) {
       setPage(1);
@@ -64,6 +70,7 @@ const Books = () => {
             limit,
             categories: selectedCategories.join(','),
             q: search,
+            sort,
           },
           signal: abortControllerRef.current?.signal,
         })
@@ -79,7 +86,7 @@ const Books = () => {
               setError(`Error: ${axiosError.response.data.error}`);
             } else if (axiosError.response) {
               setError(
-                `Request failed with status ${axiosError.response.status}`
+                `Request failed with status ${axiosError.response.status}`,
               );
             } else {
               setError(`Network error: ${axiosError.message}`);
@@ -98,12 +105,25 @@ const Books = () => {
       if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
       if (abortControllerRef.current) abortControllerRef.current.abort();
     };
-  }, [page, limit, selectedCategories, search]);
+  }, [page, limit, sort, selectedCategories, search]);
 
   if (error) return <p>{error}</p>;
 
   return (
     <>
+      <label htmlFor="select-sort">Sort by</label>
+      <select
+        id="select-sort"
+        value={sort}
+        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+          setSort(e.target.value || 'default');
+        }}
+        className="ml-2  my-10  bg-black"
+      >
+        <option value="dafault">First Created</option>
+        <option value="mostReviewed">Most Reviewed</option>
+        <option value="mostFavourited">Most Favourited</option>
+      </select>
       <input
         type="text"
         className="bg-gray-800 w-2xl p-1.5 rounded-xl"
@@ -143,7 +163,7 @@ const Books = () => {
                         ? prev.includes(cat)
                           ? prev
                           : [...prev, cat]
-                        : prev.filter((e) => e !== cat)
+                        : prev.filter((e) => e !== cat),
                     );
                   }}
                 />
@@ -253,7 +273,7 @@ const Books = () => {
                 </>
               );
             return numButton;
-          }
+          },
         )}
       </div>
     </>

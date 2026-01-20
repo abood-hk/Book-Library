@@ -1,12 +1,14 @@
 import BooksModel from '../models/Book.js';
 import { Request, Response } from 'express';
 import fetchBookIfNotFound from '../services/seedBook.js';
+import mongoose from 'mongoose';
 
 interface IBookQuery {
   page?: string;
   limit?: string;
   categories?: string;
   q?: string;
+  sort?: 'default' | 'mostReviewed' | 'mostFavourited';
 }
 
 interface IBookFilter {
@@ -23,7 +25,7 @@ export const getAllBooks = async (
     Record<string, never>,
     IBookQuery
   >,
-  res: Response
+  res: Response,
 ) => {
   const categoriesQuery = (req.query.categories as string) || null;
   const filter: IBookFilter = {};
@@ -55,6 +57,8 @@ export const getAllBooks = async (
     ];
   }
 
+  const sort = req.query.sort || 'default';
+
   const rawPage = parseInt(req.query.page || '1', 10);
   const rawLimit = parseInt(req.query.limit || '30', 10);
   const page = !Number.isNaN(rawPage) ? rawPage : 1;
@@ -62,7 +66,52 @@ export const getAllBooks = async (
   const totalBooks = await BooksModel.countDocuments(filter);
   const booksToSkip = (page - 1) * limit;
 
-  let books = await BooksModel.find(filter).skip(booksToSkip).limit(limit);
+  const pipeline: mongoose.PipelineStage[] = [
+    { $match: filter },
+
+    {
+      $lookup: {
+        from: 'reviews',
+        localField: '_id',
+        foreignField: 'book',
+        as: 'reviews',
+      },
+    },
+    {
+      $lookup: {
+        from: 'favourites',
+        localField: '_id',
+        foreignField: 'book',
+        as: 'favourites',
+      },
+    },
+    {
+      $addFields: {
+        reviewsCount: { $size: '$reviews' },
+        favouritesCount: { $size: '$favourites' },
+      },
+    },
+  ];
+
+  if (sort === 'mostReviewed') {
+    pipeline.push({ $sort: { reviewsCount: -1 } });
+  } else if (sort === 'mostFavourited') {
+    pipeline.push({ $sort: { favouritesCount: -1 } });
+  } else {
+    pipeline.push({ $sort: { createdAt: -1 } }); // default
+  }
+
+  if (sort === 'mostReviewed') {
+    pipeline.push({ $sort: { reviewsCount: -1 } });
+  } else if (sort === 'mostFavourited') {
+    pipeline.push({ $sort: { favouritesCount: -1 } });
+  } else {
+    pipeline.push({ $sort: { createdAt: 1 } });
+  }
+
+  pipeline.push({ $skip: booksToSkip }, { $limit: limit });
+
+  let books = await BooksModel.aggregate(pipeline);
 
   if (books.length === 0 && typeof req.query.q === 'string') {
     await fetchBookIfNotFound(req.query.q);
