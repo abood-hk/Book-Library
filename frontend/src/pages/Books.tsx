@@ -32,6 +32,10 @@ const Books = () => {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const [isDark, setIsDark] = useState(
+    document.documentElement.classList.contains('dark'),
+  );
+
   const oldSortRef = useRef<string>(sort);
   const oldLimitRef = useRef<number>(limit);
   const oldSelectedCategoriesRef = useRef(selectedCategories);
@@ -111,6 +115,18 @@ const Books = () => {
 
   return (
     <>
+      <button
+        onClick={() => {
+          const root = document.documentElement;
+          const next = !isDark;
+
+          root.classList.toggle('dark', next);
+          setIsDark(next);
+        }}
+        className="fixed top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center text-lg"
+      >
+        {isDark ? '☀️' : '🌙'}
+      </button>
       <label htmlFor="select-sort">Sort by</label>
       <select
         id="select-sort"
@@ -118,15 +134,15 @@ const Books = () => {
         onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
           setSort(e.target.value || 'default');
         }}
-        className="ml-2  my-10  bg-black"
+        className="ml-2  my-10  "
       >
-        <option value="dafault">First Created</option>
+        <option value="default">First Created</option>
         <option value="mostReviewed">Most Reviewed</option>
         <option value="mostFavourited">Most Favourited</option>
       </select>
       <input
         type="text"
-        className="bg-gray-800 w-2xl p-1.5 rounded-xl"
+        className=" w-2xl p-1.5 rounded-xl"
         placeholder="Search by author name or book label"
         value={search}
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -140,7 +156,7 @@ const Books = () => {
         onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
           setLimit(parseInt(e.target.value || '30'));
         }}
-        className="my-10 bg-black "
+        className="my-10 "
       >
         <option value={10}>10</option>
         <option value={20}>20</option>
@@ -199,19 +215,15 @@ const Books = () => {
             const paginationButtonSty = `
               px-3 py-1 mx-0.5 my-0.5 cursor-pointer transition-colors rounded-sm  `;
 
-            const activePaginationButtonSty = (active: boolean) => {
-              return `${paginationButtonSty}  ${
-                active
-                  ? ' text-white bg-gray-600 hover:bg-gray-700'
-                  : 'bg-gray-900 text-white hover:bg-black'
-              }`;
+            const activePaginationButtonSty = () => {
+              return paginationButtonSty;
             };
 
             const numButton = (
               <button
                 key={num}
                 onClick={() => setPage(num)}
-                className={activePaginationButtonSty(num === page)}
+                className={`${paginationButtonSty} ${num === page ? 'active-page' : ''}`}
               >
                 {num}
               </button>
@@ -221,7 +233,7 @@ const Books = () => {
               <button
                 key="next"
                 onClick={() => setPage(page + 1)}
-                className={activePaginationButtonSty(false)}
+                className={activePaginationButtonSty()}
               >
                 {'->'}
               </button>
@@ -231,7 +243,7 @@ const Books = () => {
               <button
                 key="prev"
                 onClick={() => setPage(page - 1)}
-                className={activePaginationButtonSty(false)}
+                className={activePaginationButtonSty()}
               >
                 {'<-'}
               </button>
@@ -241,7 +253,7 @@ const Books = () => {
               <button
                 key="first"
                 onClick={() => setPage(1)}
-                className={activePaginationButtonSty(false)}
+                className={activePaginationButtonSty()}
               >
                 {'<<-'}
               </button>
@@ -251,7 +263,7 @@ const Books = () => {
               <button
                 key="last"
                 onClick={() => setPage(nums.length)}
-                className={activePaginationButtonSty(false)}
+                className={activePaginationButtonSty()}
               >
                 {'->>'}
               </button>

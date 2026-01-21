@@ -92,6 +92,16 @@ export const getAllBooks = async (
       },
     },
   ];
+  pipeline.push({
+    $group: {
+      _id: '$_id',
+      doc: { $first: '$$ROOT' },
+    },
+  });
+
+  pipeline.push({
+    $replaceRoot: { newRoot: '$doc' },
+  });
 
   if (sort === 'mostReviewed') {
     pipeline.push({ $sort: { reviewsCount: -1 } });
