@@ -66,6 +66,15 @@ export const getAllBooks = async (
   const totalBooks = await BooksModel.countDocuments(filter);
   const booksToSkip = (page - 1) * limit;
 
+  const sortStage: mongoose.PipelineStage = {
+    $sort:
+      sort === 'mostReviewed'
+        ? { reviewsCount: -1, _id: 1 }
+        : sort === 'mostFavourited'
+          ? { favouritesCount: -1, _id: 1 }
+          : { createdAt: 1, _id: 1 },
+  };
+
   const pipeline: mongoose.PipelineStage[] = [
     { $match: filter },
 
@@ -91,41 +100,20 @@ export const getAllBooks = async (
         favouritesCount: { $size: '$favourites' },
       },
     },
+
+    sortStage,
+    { $skip: booksToSkip },
+    { $limit: limit },
   ];
-  pipeline.push({
-    $group: {
-      _id: '$_id',
-      doc: { $first: '$$ROOT' },
-    },
-  });
-
-  pipeline.push({
-    $replaceRoot: { newRoot: '$doc' },
-  });
-
-  if (sort === 'mostReviewed') {
-    pipeline.push({ $sort: { reviewsCount: -1 } });
-  } else if (sort === 'mostFavourited') {
-    pipeline.push({ $sort: { favouritesCount: -1 } });
-  } else {
-    pipeline.push({ $sort: { createdAt: -1 } }); // default
-  }
-
-  if (sort === 'mostReviewed') {
-    pipeline.push({ $sort: { reviewsCount: -1 } });
-  } else if (sort === 'mostFavourited') {
-    pipeline.push({ $sort: { favouritesCount: -1 } });
-  } else {
-    pipeline.push({ $sort: { createdAt: 1 } });
-  }
-
-  pipeline.push({ $skip: booksToSkip }, { $limit: limit });
 
   let books = await BooksModel.aggregate(pipeline);
 
   if (books.length === 0 && typeof req.query.q === 'string') {
     await fetchBookIfNotFound(req.query.q);
-    books = await BooksModel.find(filter).skip(booksToSkip).limit(limit);
+    books = await BooksModel.find(filter)
+      .sort(sortStage.$sort)
+      .skip(booksToSkip)
+      .limit(limit);
   }
 
   res.status(200).json({

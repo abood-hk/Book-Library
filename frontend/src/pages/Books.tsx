@@ -32,10 +32,6 @@ const Books = () => {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const [isDark, setIsDark] = useState(
-    document.documentElement.classList.contains('dark'),
-  );
-
   const oldSortRef = useRef<string>(sort);
   const oldLimitRef = useRef<number>(limit);
   const oldSelectedCategoriesRef = useRef(selectedCategories);
@@ -115,77 +111,69 @@ const Books = () => {
 
   return (
     <>
-      <button
-        onClick={() => {
-          const root = document.documentElement;
-          const next = !isDark;
+      <div className="books-toolbar">
+        <div className="toolbar-item left">
+          <label htmlFor="select-sort">Sort By</label>
+          <select
+            id="select-sort"
+            value={sort}
+            onChange={(e) => setSort(e.target.value || 'default')}
+          >
+            <option value="default">First Created</option>
+            <option value="mostReviewed">Most Reviewed</option>
+            <option value="mostFavourited">Most Favourited</option>
+          </select>
+        </div>
 
-          root.classList.toggle('dark', next);
-          setIsDark(next);
-        }}
-        className="fixed top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center text-lg"
-      >
-        {isDark ? '☀️' : '🌙'}
-      </button>
-      <label htmlFor="select-sort">Sort by</label>
-      <select
-        id="select-sort"
-        value={sort}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-          setSort(e.target.value || 'default');
-        }}
-        className="ml-2  my-10  "
-      >
-        <option value="default">First Created</option>
-        <option value="mostReviewed">Most Reviewed</option>
-        <option value="mostFavourited">Most Favourited</option>
-      </select>
-      <input
-        type="text"
-        className=" w-2xl p-1.5 rounded-xl"
-        placeholder="Search by author name or book label"
-        value={search}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-          setSearch(e.target.value);
-        }}
-      />
-      <label htmlFor="select-limit"> Books per page: </label>
-      <select
-        id="select-limit"
-        value={limit}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-          setLimit(parseInt(e.target.value || '30'));
-        }}
-        className="my-10 "
-      >
-        <option value={10}>10</option>
-        <option value={20}>20</option>
-        <option value={30}>30</option>
-        <option value={50}>50</option>
-      </select>
-      <h3 key={'change-cate-label'}>Filter by categories</h3>
-      <div className="grid grid-cols-3" key={'categories-container'}>
+        <div className="toolbar-item center">
+          <input
+            type="text"
+            placeholder="Search by author or title..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
+        <div className="toolbar-item right">
+          <label htmlFor="select-limit">Books Per Page</label>
+          <select
+            id="select-limit"
+            value={limit}
+            onChange={(e) => setLimit(parseInt(e.target.value || '30'))}
+          >
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={30}>30</option>
+            <option value={50}>50</option>
+          </select>
+        </div>
+      </div>
+      <h3 className="categories-title">Filter By Category</h3>
+      <div className="categories-container">
         {GENRES.map((cat) => {
           if (cat === 'Other') return;
           return (
-            <div key={cat}>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={selectedCategories.includes(cat)}
-                  onChange={(e) => {
-                    setSelectedCategories((prev) =>
-                      e.target.checked
-                        ? prev.includes(cat)
-                          ? prev
-                          : [...prev, cat]
-                        : prev.filter((e) => e !== cat),
-                    );
-                  }}
-                />
-                {cat}
-              </label>
-            </div>
+            <label
+              key={cat}
+              className={`category-chip ${
+                selectedCategories.includes(cat) ? 'active' : ''
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={selectedCategories.includes(cat)}
+                onChange={(e) => {
+                  setSelectedCategories((prev) =>
+                    e.target.checked
+                      ? prev.includes(cat)
+                        ? prev
+                        : [...prev, cat]
+                      : prev.filter((e) => e !== cat),
+                  );
+                }}
+              />
+              {cat}
+            </label>
           );
         })}
       </div>

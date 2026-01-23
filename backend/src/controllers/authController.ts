@@ -29,11 +29,11 @@ export const loginUser = async (req: Request, res: Response) => {
     }
 
     const accessToken = genAccessToken({
-      _id: user._id as string,
+      _id: user._id.toString(),
       role: user.role,
     });
 
-    const refreshToken = genRefreshToken({ _id: user._id as string });
+    const refreshToken = genRefreshToken({ _id: user._id.toString() });
 
     await redis.set(`rt:${user._id}`, refreshToken, { EX: 60 * 60 * 3 });
 
@@ -74,10 +74,10 @@ export const signupUser = async (req: Request, res: Response) => {
     });
 
     const accessToken = genAccessToken({
-      _id: user._id as string,
+      _id: user._id.toString(),
       role: user.role,
     });
-    const refreshToken = genRefreshToken({ _id: user._id as string });
+    const refreshToken = genRefreshToken({ _id: user._id.toString() });
 
     await redis.set(`rt:${user._id}`, refreshToken, { EX: 60 * 60 * 3 });
 
@@ -119,7 +119,7 @@ export const logoutUser = async (req: Request, res: Response) => {
       try {
         const payload = jwt.verify(
           refreshToken,
-          process.env.REFRESH_TOKEN_SECRET
+          process.env.REFRESH_TOKEN_SECRET,
         ) as IRefreshPayload;
 
         redis.del(`rt:${payload.userId}`);
@@ -149,7 +149,7 @@ export const regenerateToken = async (req: Request, res: Response) => {
 
     const payload = jwt.verify(
       refreshToken,
-      process.env.REFRESH_TOKEN_SECRET
+      process.env.REFRESH_TOKEN_SECRET,
     ) as IRefreshPayload;
 
     const user = await userModel.findById(payload.userId);
@@ -165,11 +165,11 @@ export const regenerateToken = async (req: Request, res: Response) => {
     }
 
     const accessToken = genAccessToken({
-      _id: user._id as string,
+      _id: user._id.toString(),
       role: user.role,
     });
 
-    const newRefreshToken = genRefreshToken({ _id: user._id as string });
+    const newRefreshToken = genRefreshToken({ _id: user._id.toString() });
 
     await redis.set(`rt:${user._id}`, newRefreshToken, { EX: 60 * 60 * 3 });
 
