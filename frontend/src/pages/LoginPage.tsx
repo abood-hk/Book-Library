@@ -3,8 +3,7 @@ import api, { setAccessToken } from '../api/axiosInstance';
 import { useNavigate, Link } from 'react-router-dom';
 import type { IAuthResponse } from '../utils/interfaces';
 
-const Signup = () => {
-  const [username, setUsername] = useState<string>('');
+const Login = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
@@ -14,13 +13,8 @@ const Signup = () => {
 
   const submitForm = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!email || !password || !username) {
+    if (!email || !password) {
       setError('All fields are required');
-      return;
-    }
-
-    if (username.length < 3 || username.length > 15) {
-      setError('Username must be 3-15 characters');
       return;
     }
 
@@ -34,8 +28,7 @@ const Signup = () => {
     setLoading(true);
 
     api
-      .post<IAuthResponse>('/users/signup', {
-        username: username.trim(),
+      .post<IAuthResponse>('/users/login', {
         email: email.trim(),
         password,
       })
@@ -60,27 +53,13 @@ const Signup = () => {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-header">
-          <h2>Create your account</h2>
-          <p>Sign up and discover your next favorite book</p>
+          <h2>Login</h2>
+          <p>Login and pick up where you left off</p>
         </div>
 
         {error && <p className="auth-error">{error}</p>}
 
         <form className="auth-form" onSubmit={submitForm} noValidate>
-          <div className="auth-field">
-            <label htmlFor="username-field">
-              Username <span className="required">*</span>
-            </label>
-            <input
-              value={username}
-              onChange={(e) => {
-                setUsername(e.target.value);
-              }}
-              id="username-field"
-              type="text"
-            />
-          </div>
-
           <div className="auth-field">
             <label htmlFor="email-field">
               Email <span className="required">*</span>
@@ -105,23 +84,18 @@ const Signup = () => {
               id="password-field"
               type="password"
             />
-            <small className="auth-hint">
-              7-17 chars, must contain uppercase, lowercase, number & special
-              char
-            </small>
           </div>
-
           <button disabled={loading} type="submit" className="auth-submit ">
-            {loading ? 'Sign up...' : 'Sign up'}
+            {loading ? 'Login...' : 'Login'}
           </button>
         </form>
 
         <p className="auth-footer">
-          Already have an account ? <Link to="/login">Login</Link>
+          Do not have an account ? <Link to="/signup">Sign up</Link>
         </p>
       </div>
     </div>
   );
 };
 
-export default Signup;
+export default Login;

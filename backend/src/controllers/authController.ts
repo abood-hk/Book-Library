@@ -54,17 +54,6 @@ export const signupUser = async (req: Request, res: Response) => {
   try {
     const { email, username, password } = req.body;
 
-    const exsitingEmail = await userModel.exists({ email });
-    const exsitingUsername = await userModel.exists({
-      username,
-    });
-
-    if (exsitingEmail) {
-      return res.status(400).json({ message: 'Email already used' });
-    }
-    if (exsitingUsername) {
-      return res.status(400).json({ message: 'Username already used' });
-    }
     const hashedPassword = await bcrypt.hash(password, 11);
 
     const user = await userModel.create({

@@ -299,6 +299,28 @@
   }
 }
 
+@layer components {
+  .auth-error {
+    @apply text-sm text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-md mt-2 mb-2;
+  }
+
+  .dark .auth-error {
+    color: rgb(248 113 113);
+    background-color: rgb(76 5 12 / 0.3);
+    border-color: rgb(220 38 38);
+  }
+}
+
+@layer components {
+  .auth-hint {
+    @apply text-xs text-gray-500 mt-1 block;
+  }
+
+  .dark .auth-hint {
+    @apply text-gray-400;
+  }
+}
+
 #root {
   @apply max-w-7xl mx-auto px-6;
 }

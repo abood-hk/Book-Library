@@ -1,7 +1,22 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL,
+  withCredentials: true,
+});
+
+let accessToken: string | null = null;
+
+export const setAccessToken = (token: string | null) => {
+  accessToken = token;
+};
+
+api.interceptors.request.use((req) => {
+  if (accessToken) {
+    req.headers = req.headers ?? {};
+    req.headers.Authorization = `Bearer ${accessToken}`;
+  }
+  return req;
 });
 
 export default api;
