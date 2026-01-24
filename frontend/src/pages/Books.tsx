@@ -31,6 +31,8 @@ const Books = () => {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
+  const [liked, setLiked] = useState<string[]>([]);
+  const [toastMessage, setToastMessage] = useState('');
 
   const oldSortRef = useRef<string>(sort);
   const oldLimitRef = useRef<number>(limit);
@@ -38,6 +40,37 @@ const Books = () => {
   const oldSearchRef = useRef(search);
   const searchTimeoutRef = useRef<number | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  const addToLiked = (olid: string) => {
+    if (liked.includes(olid)) return;
+
+    setLiked((prev) => [...prev, olid]);
+
+    api.post(`/users/favourites/${olid}`).catch((err) => {
+      setLiked((prev) =>
+        prev.filter((books) => {
+          return books != olid;
+        }),
+      );
+      setToastMessage('You need to sign in to add to favourites');
+      console.error(err);
+    });
+  };
+
+  const removeFromLiked = (olid: string) => {
+    if (!liked.includes(olid)) return;
+
+    setLiked((prev) =>
+      prev.filter((books) => {
+        return books != olid;
+      }),
+    );
+    api.delete(`/users/favourites/${olid}`, {}).catch((err) => {
+      setLiked((prev) => [...prev, olid]);
+      setToastMessage('You need to sign in to remove from favourites');
+      console.error(err);
+    });
+  };
 
   useEffect(() => {
     if (limit !== oldLimitRef.current) {
@@ -107,10 +140,38 @@ const Books = () => {
     };
   }, [page, limit, sort, selectedCategories, search]);
 
+  useEffect(() => {
+    const getFavourites = () => {
+      api
+        .get<string[]>('/users/favouritesIds', {})
+        .then((res) => {
+          setLiked(res.data);
+        })
+        .catch(() => {
+          setLiked([]);
+        });
+    };
+    getFavourites();
+  }, []);
+
+  useEffect(() => {
+    if (!toastMessage) return;
+
+    const t = setTimeout(() => setToastMessage(''), 3000);
+
+    return () => clearTimeout(t);
+  }, [toastMessage]);
+
   if (error) return <p>{error}</p>;
 
   return (
     <>
+      {toastMessage && (
+        <div className="toast toast-error">
+          <span>{toastMessage}</span>
+          <button onClick={() => setToastMessage('')}>Dismiss</button>
+        </div>
+      )}
       <div className="books-toolbar">
         <div className="toolbar-item left">
           <label htmlFor="select-sort">Sort By</label>
@@ -185,7 +246,47 @@ const Books = () => {
             {books.map((book) => (
               <Link key={book.olid} to={`/books/${book.olid}`}>
                 <div className=" ">
-                  <img className="w-40 m-auto" src={fetchCover(book)} alt="" />
+                  <div className="relative">
+                    <img
+                      className="w-40 m-auto"
+                      src={fetchCover(book)}
+                      alt=""
+                    />
+
+                    <div
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (liked.includes(book.olid)) {
+                          removeFromLiked(book.olid);
+                        } else if (!liked.includes(book.olid)) {
+                          addToLiked(book.olid);
+                        }
+                      }}
+                      className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center cursor-pointer"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        className={`w-6 h-6 transition-transform duration-200 ${
+                          liked.includes(book.olid) ? 'scale-125' : ''
+                        }`}
+                      >
+                        <path
+                          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 
+           4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 
+           14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 
+           6.86-8.55 11.54L12 21.35z"
+                          fill={
+                            liked.includes(book.olid)
+                              ? 'rgb(var(--primary))'
+                              : 'none'
+                          }
+                          stroke="rgb(var(--primary))"
+                          strokeWidth="2"
+                        />
+                      </svg>
+                    </div>
+                  </div>
                   <h2>{book.title}</h2>
                   <p>{book.author_name}</p>
                   <h3>{uniqueCategories(book.categories).join(', ')}</h3>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import api, { setAccessToken } from '../api/axiosInstance';
 import { useNavigate, Link } from 'react-router-dom';
 import type { IAuthResponse } from '../utils/interfaces';
@@ -9,6 +9,14 @@ const Signup = () => {
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!error) return;
+
+    const t = setTimeout(() => setError(''), 3000);
+
+    return () => clearTimeout(t);
+  }, [error]);
 
   const navigate = useNavigate();
 

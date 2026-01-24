@@ -51,11 +51,10 @@ export const loginUser = async (req: Request, res: Response) => {
 };
 
 export const signupUser = async (req: Request, res: Response) => {
+  const { email, username, password } = req.body;
+
+  const hashedPassword = await bcrypt.hash(password, 11);
   try {
-    const { email, username, password } = req.body;
-
-    const hashedPassword = await bcrypt.hash(password, 11);
-
     const user = await userModel.create({
       email,
       username,
