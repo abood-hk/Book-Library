@@ -12,7 +12,7 @@ const favouritesSchema = new Schema<IFavourites>(
     user: { type: Schema.Types.ObjectId, ref: 'users', required: true },
     book: { type: Schema.Types.ObjectId, ref: 'books', required: true },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 favouritesSchema.index({ user: 1 });
@@ -20,7 +20,7 @@ favouritesSchema.index({ user: 1, book: 1 }, { unique: true });
 
 const FavouriteModel = mongoose.model<IFavourites>(
   'favourites',
-  favouritesSchema
+  favouritesSchema,
 );
 
 export default FavouriteModel;

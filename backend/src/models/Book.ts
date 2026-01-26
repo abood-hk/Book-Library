@@ -52,7 +52,7 @@ export const bookSchema = new Schema<IBook>(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const BooksModel = mongoose.model<IBook>('books', bookSchema);

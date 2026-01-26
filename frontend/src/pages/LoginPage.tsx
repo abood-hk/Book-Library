@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
-import api, { setAccessToken } from '../api/axiosInstance';
+import api from '../api/axiosInstance';
 import { useNavigate, Link } from 'react-router-dom';
 import type { IAuthResponse } from '../utils/interfaces';
+import useAuth from '../hooks/UseAuth';
 
 const Login = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+
+  const { setAuth } = useAuth();
 
   useEffect(() => {
     if (!error) return;
@@ -41,7 +44,11 @@ const Login = () => {
         password,
       })
       .then((res) => {
-        setAccessToken(res.data.accessToken);
+        console.log('Access token :', res.data.accessToken);
+        setAuth({
+          accessToken: res.data.accessToken,
+          user: { id: res.data._id },
+        });
         navigate('/');
       })
       .catch((err) => {

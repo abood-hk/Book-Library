@@ -16,7 +16,7 @@ export const loginUser = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
-    const user = await userModel.findOne({ email });
+    const user = await userModel.findOne({ email }).select('+password');
 
     if (!user) {
       return res.status(400).json({ message: 'Email or password is wrong' });
@@ -44,15 +44,21 @@ export const loginUser = async (req: Request, res: Response) => {
       maxAge: 60 * 60 * 3 * 1000,
     });
 
-    res.status(200).json({ accessToken });
-  } catch {
+    res.status(200).json({ accessToken, _id: user._id, role: user.role });
+  } catch (err) {
+    console.error('login error:', err);
+
     return res.status(500).json({ message: 'Server error' });
   }
 };
 
 export const signupUser = async (req: Request, res: Response) => {
   const { email, username, password } = req.body;
-
+  if (password.length < 7 || password.length > 17) {
+    return res.status(400).json({
+      message: 'Password must be 7-17 characters long',
+    });
+  }
   const hashedPassword = await bcrypt.hash(password, 11);
   try {
     const user = await userModel.create({
@@ -78,6 +84,7 @@ export const signupUser = async (req: Request, res: Response) => {
 
     return res.status(200).json({ accessToken });
   } catch (err: unknown) {
+    console.error('Signup error:', err);
     if (
       typeof err === 'object' &&
       err != null &&

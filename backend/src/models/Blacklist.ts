@@ -47,7 +47,7 @@ const blacklistSchema = new Schema<IBlacklist>(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const BlacklistModel = mongoose.model<IBlacklist>('blacklist', blacklistSchema);

@@ -40,10 +40,10 @@ usersRouter.post(
   loginUser,
 );
 usersRouter.post('/logout', logoutUser);
+usersRouter.post('/refresh', regenerateToken);
 
 usersRouter.get('/favourites', auth, showFavourites);
 usersRouter.get('/favouritesIds', auth, getFavouritesIds);
-usersRouter.post('/refresh', regenerateToken);
 usersRouter.post('/favourites/:bookId', auth, addToFavourites);
 usersRouter.delete('/favourites/:bookId', auth, removeFromFavourites);
 

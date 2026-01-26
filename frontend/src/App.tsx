@@ -6,19 +6,22 @@ import './App.css';
 import Signup from './pages/SignupPage';
 import ToggleThemes from './components/ToggleThemes';
 import Login from './pages/LoginPage';
+import { AuthProvider } from './context/AuthProvider';
 
 function App() {
   return (
     <>
       <Navbar />
       <ToggleThemes />
-      <Routes>
-        <Route path="/" element={<Books />} />
-        <Route path="/books" element={<Books />} />
-        <Route path="/books/:olid" element={<BookDatails />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/login" element={<Login />} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<Books />} />
+          <Route path="/books" element={<Books />} />
+          <Route path="/books/:olid" element={<BookDatails />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/login" element={<Login />} />
+        </Routes>
+      </AuthProvider>
     </>
   );
 }

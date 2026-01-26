@@ -189,12 +189,13 @@
     animation: fade-in-down 0.3s ease-out forwards;
   }
 
-  .toast button {
+  .link {
     border-color: rgb(var(--primary));
     cursor: pointer;
-    @apply text-xs  text-white;
+    text-decoration: underline;
+    @apply text-sm text-white;
   }
-  .toast button:hover {
+  .link:hover {
     background-color: rgb(var(--primary));
   }
 }

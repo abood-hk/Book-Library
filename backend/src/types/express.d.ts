@@ -1,9 +1,9 @@
-import { IAccessPayload } from '../interfaces/IPayload.js';
+import { IUser } from '../models/User.js';
 
 declare global {
   namespace Express {
     interface Request {
-      user?: IAccessPayload;
+      user?: IUser;
     }
   }
 }

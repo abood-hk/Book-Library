@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import { IAccessPayload } from '../interfaces/IPayload';
+import UserModel from '../models/User';
 
 dotenv.config();
 
@@ -22,10 +23,18 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
 
     const payload = jwt.verify(
       token,
-      process.env.ACCESS_TOKEN_SECRET
+      process.env.ACCESS_TOKEN_SECRET,
     ) as IAccessPayload;
 
-    req.user = payload;
+    console.log(payload._id);
+
+    const user = await UserModel.findById(payload._id);
+
+    if (!user) {
+      return res.status(401).json({ message: 'User not found' });
+    }
+
+    req.user = user;
     next();
   } catch {
     res.status(401).json({ message: 'Invalid or expired token' });

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api, { setAccessToken } from '../api/axiosInstance';
+import api from '../api/axiosInstance';
 import { useNavigate, Link } from 'react-router-dom';
 import type { IAuthResponse } from '../utils/interfaces';
 
@@ -47,8 +47,7 @@ const Signup = () => {
         email: email.trim(),
         password,
       })
-      .then((res) => {
-        setAccessToken(res.data.accessToken);
+      .then(() => {
         navigate('/');
       })
       .catch((err) => {

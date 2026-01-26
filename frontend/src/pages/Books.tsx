@@ -4,6 +4,7 @@ import axios, { AxiosError } from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import uniqueCategories, { GENRES } from '../utils/normalizeCategories';
 import fetchCover from '../utils/fetchCover';
+import useAxiosPrivate from '../hooks/UseAxiosPrivate';
 
 export type Book = {
   olid: string;
@@ -34,6 +35,8 @@ const Books = () => {
   const [liked, setLiked] = useState<string[]>([]);
   const [toastMessage, setToastMessage] = useState('');
 
+  const axiosPrivate = useAxiosPrivate();
+
   const oldSortRef = useRef<string>(sort);
   const oldLimitRef = useRef<number>(limit);
   const oldSelectedCategoriesRef = useRef(selectedCategories);
@@ -46,13 +49,13 @@ const Books = () => {
 
     setLiked((prev) => [...prev, olid]);
 
-    api.post(`/users/favourites/${olid}`).catch((err) => {
+    axiosPrivate.post(`/users/favourites/${olid}`).catch((err) => {
       setLiked((prev) =>
         prev.filter((books) => {
           return books != olid;
         }),
       );
-      setToastMessage('You need to sign in to add to favourites');
+      setToastMessage('You need to login to add to favourites');
       console.error(err);
     });
   };
@@ -65,9 +68,9 @@ const Books = () => {
         return books != olid;
       }),
     );
-    api.delete(`/users/favourites/${olid}`, {}).catch((err) => {
+    axiosPrivate.delete(`/users/favourites/${olid}`, {}).catch((err) => {
       setLiked((prev) => [...prev, olid]);
-      setToastMessage('You need to sign in to remove from favourites');
+      setToastMessage('You need to login to remove from favourites');
       console.error(err);
     });
   };
@@ -142,7 +145,7 @@ const Books = () => {
 
   useEffect(() => {
     const getFavourites = () => {
-      api
+      axiosPrivate
         .get<string[]>('/users/favouritesIds', {})
         .then((res) => {
           setLiked(res.data);
@@ -169,7 +172,9 @@ const Books = () => {
       {toastMessage && (
         <div className="toast toast-error">
           <span>{toastMessage}</span>
-          <button onClick={() => setToastMessage('')}>Dismiss</button>
+          <span className="link">
+            <Link to="/login">Login</Link>
+          </span>
         </div>
       )}
       <div className="books-toolbar">
