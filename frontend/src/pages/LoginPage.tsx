@@ -47,7 +47,6 @@ const Login = () => {
         console.log('Access token :', res.data.accessToken);
         setAuth({
           accessToken: res.data.accessToken,
-          user: { id: res.data._id },
         });
         navigate('/');
       })

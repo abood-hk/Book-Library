@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import FavouriteModel from '../models/Favourites.js';
-import BooksModel from '../models/Book.js';
+import BooksModel, { IBook } from '../models/Book.js';
 
 export const addToFavourites = async (req: Request, res: Response) => {
   const user = req.user;
@@ -79,11 +79,11 @@ export const getFavouritesIds = async (req: Request, res: Response) => {
   }
 
   try {
-    const favourites = await FavouriteModel.find({ user: user._id }).select(
-      'book -_id',
-    );
+    const favourites = await FavouriteModel.find({ user: user._id })
+      .select('book -_id')
+      .populate<{ book: IBook }>('book');
 
-    const favouritesIds = favourites.map((f) => f.book.toString());
+    const favouritesIds = favourites.map((favourite) => favourite.book.olid);
 
     return res.status(200).json(favouritesIds);
   } catch {

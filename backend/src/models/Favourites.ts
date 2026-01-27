@@ -1,8 +1,9 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { IBook } from './Book';
 
 interface IFavourites extends Document {
   user: mongoose.Types.ObjectId;
-  book: mongoose.Types.ObjectId;
+  book: mongoose.Types.ObjectId | IBook;
   createdAt: Date;
   updatedAt: Date;
 }

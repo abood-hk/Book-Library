@@ -2,7 +2,7 @@ import express from 'express';
 import {
   loginUser,
   signupUser,
-  regenerateToken,
+  refreshAccessToken,
   logoutUser,
 } from '../controllers/authController.js';
 import {
@@ -40,7 +40,7 @@ usersRouter.post(
   loginUser,
 );
 usersRouter.post('/logout', logoutUser);
-usersRouter.post('/refresh', regenerateToken);
+usersRouter.get('/refresh', refreshAccessToken);
 
 usersRouter.get('/favourites', auth, showFavourites);
 usersRouter.get('/favouritesIds', auth, getFavouritesIds);

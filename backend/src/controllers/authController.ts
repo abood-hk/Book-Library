@@ -40,11 +40,11 @@ export const loginUser = async (req: Request, res: Response) => {
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 60 * 60 * 3 * 1000,
     });
 
-    res.status(200).json({ accessToken, _id: user._id, role: user.role });
+    res.status(200).json({ accessToken });
   } catch (err) {
     console.error('login error:', err);
 
@@ -78,7 +78,7 @@ export const signupUser = async (req: Request, res: Response) => {
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 60 * 60 * 3 * 1000,
     });
 
@@ -107,7 +107,7 @@ export const logoutUser = async (req: Request, res: Response) => {
     res.clearCookie('refreshToken', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
 
     if (refreshToken && process.env.REFRESH_TOKEN_SECRET) {
@@ -117,7 +117,7 @@ export const logoutUser = async (req: Request, res: Response) => {
           process.env.REFRESH_TOKEN_SECRET,
         ) as IRefreshPayload;
 
-        redis.del(`rt:${payload.userId}`);
+        redis.del(`rt:${payload._id}`);
       } catch {
         return res.status(200).json({ message: 'Logout succesfully' });
       }
@@ -129,13 +129,14 @@ export const logoutUser = async (req: Request, res: Response) => {
   }
 };
 
-export const regenerateToken = async (req: Request, res: Response) => {
+export const refreshAccessToken = async (req: Request, res: Response) => {
   try {
     const refreshToken = req.cookies.refreshToken;
 
-    if (!refreshToken)
+    if (!refreshToken) {
+      console.log('!refreshtoken');
       return res.status(401).json({ message: 'Invalid refresh token' });
-
+    }
     if (!process.env.REFRESH_TOKEN_SECRET) {
       return res
         .status(400)
@@ -147,15 +148,17 @@ export const regenerateToken = async (req: Request, res: Response) => {
       process.env.REFRESH_TOKEN_SECRET,
     ) as IRefreshPayload;
 
-    const user = await userModel.findById(payload.userId);
+    const user = await userModel.findById(payload._id);
 
     if (!user) {
+      console.log('user not found');
       return res.status(401).json({ message: 'User not found' });
     }
 
-    const storedToken = await redis.get(`rt:${payload.userId}`);
+    const storedToken = await redis.get(`rt:${payload._id}`);
 
     if (refreshToken !== storedToken) {
+      console.log('Refresh token revoked');
       return res.status(401).json({ message: 'Refresh token revoked' });
     }
 
@@ -163,19 +166,8 @@ export const regenerateToken = async (req: Request, res: Response) => {
       _id: user._id.toString(),
       role: user.role,
     });
-
-    const newRefreshToken = genRefreshToken({ _id: user._id.toString() });
-
-    await redis.set(`rt:${user._id}`, newRefreshToken, { EX: 60 * 60 * 3 });
-
-    res.cookie('refreshToken', newRefreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 60 * 60 * 3 * 1000,
-    });
-
-    return res.status(201).json({ accessToken });
+    console.log('new Access Token', accessToken);
+    return res.status(200).json({ accessToken });
   } catch {
     return res.status(400).json({ message: 'Invalid refresh token' });
   }

@@ -22,7 +22,9 @@ const colors: Record<Method, (_: string) => string> = {
 const logger = (req: Request, res: Response, next: NextFunction) => {
   const method: Method = req.method as Method;
   console.log(
-    colors[method](`${method}\t${path.join(shortDirname, '..', '..', req.url)}`)
+    colors[method](
+      `${method}\t${path.join(shortDirname, '..', '..', req.url)}`,
+    ),
   );
   next();
 };

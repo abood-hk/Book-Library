@@ -11,7 +11,7 @@ export const genAccessToken = (user: { _id: string; role: string }) => {
   const token = jwt.sign(
     { _id: user._id.toString(), role: user.role },
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: '10m' },
+    { expiresIn: '5m' },
   );
   return token;
 };

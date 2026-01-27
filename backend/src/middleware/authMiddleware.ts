@@ -26,8 +26,6 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
       process.env.ACCESS_TOKEN_SECRET,
     ) as IAccessPayload;
 
-    console.log(payload._id);
-
     const user = await UserModel.findById(payload._id);
 
     if (!user) {

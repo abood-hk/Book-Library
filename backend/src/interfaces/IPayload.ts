@@ -4,5 +4,5 @@ export interface IAccessPayload {
 }
 
 export interface IRefreshPayload {
-  userId: string;
+  _id: string;
 }

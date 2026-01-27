@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import uniqueCategories, { GENRES } from '../utils/normalizeCategories';
 import fetchCover from '../utils/fetchCover';
 import useAxiosPrivate from '../hooks/UseAxiosPrivate';
+import useAuth from '../hooks/UseAuth';
 
 export type Book = {
   olid: string;
@@ -34,9 +35,13 @@ const Books = () => {
   const [loading, setLoading] = useState(false);
   const [liked, setLiked] = useState<string[]>([]);
   const [toastMessage, setToastMessage] = useState('');
+  const [pending, setPending] = useState<Set<string>>(new Set(''));
+
+  const { auth } = useAuth();
 
   const axiosPrivate = useAxiosPrivate();
 
+  const userIdRef = useRef<string | null>(null);
   const oldSortRef = useRef<string>(sort);
   const oldLimitRef = useRef<number>(limit);
   const oldSelectedCategoriesRef = useRef(selectedCategories);
@@ -44,12 +49,15 @@ const Books = () => {
   const searchTimeoutRef = useRef<number | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const addToLiked = (olid: string) => {
+  const addToLiked = async (olid: string) => {
     if (liked.includes(olid)) return;
 
-    setLiked((prev) => [...prev, olid]);
+    setPending((prev) => new Set(prev).add(olid));
 
-    axiosPrivate.post(`/users/favourites/${olid}`).catch((err) => {
+    setLiked((prev) => [...prev, olid]);
+    try {
+      await axiosPrivate.post(`/users/favourites/${olid}`);
+    } catch (err) {
       setLiked((prev) =>
         prev.filter((books) => {
           return books != olid;
@@ -57,22 +65,38 @@ const Books = () => {
       );
       setToastMessage('You need to login to add to favourites');
       console.error(err);
-    });
+    } finally {
+      setPending((prev) => {
+        const next = new Set(prev);
+        next.delete(olid);
+        return next;
+      });
+    }
   };
 
-  const removeFromLiked = (olid: string) => {
+  const removeFromLiked = async (olid: string) => {
     if (!liked.includes(olid)) return;
+
+    setPending((prev) => new Set(prev).add(olid));
 
     setLiked((prev) =>
       prev.filter((books) => {
         return books != olid;
       }),
     );
-    axiosPrivate.delete(`/users/favourites/${olid}`, {}).catch((err) => {
+    try {
+      await axiosPrivate.delete(`/users/favourites/${olid}`);
+    } catch (err) {
       setLiked((prev) => [...prev, olid]);
       setToastMessage('You need to login to remove from favourites');
       console.error(err);
-    });
+    } finally {
+      setPending((prev) => {
+        const next = new Set(prev);
+        next.delete(olid);
+        return next;
+      });
+    }
   };
 
   useEffect(() => {
@@ -144,18 +168,28 @@ const Books = () => {
   }, [page, limit, sort, selectedCategories, search]);
 
   useEffect(() => {
-    const getFavourites = () => {
-      axiosPrivate
-        .get<string[]>('/users/favouritesIds', {})
-        .then((res) => {
-          setLiked(res.data);
-        })
-        .catch(() => {
-          setLiked([]);
-        });
-    };
-    getFavourites();
-  }, []);
+    if (!auth.accessToken) {
+      setLiked([]);
+      return;
+    }
+    const payload = JSON.parse(atob(auth.accessToken.split('.')[1]));
+    const currentId = payload._id;
+
+    if (userIdRef.current === currentId) {
+      return;
+    }
+
+    userIdRef.current = currentId;
+
+    axiosPrivate
+      .get<string[]>('/users/favouritesIds')
+      .then((res) => {
+        setLiked(res.data);
+      })
+      .catch(() => {
+        setLiked([]);
+      });
+  }, [auth.accessToken]);
 
   useEffect(() => {
     if (!toastMessage) return;
@@ -261,6 +295,7 @@ const Books = () => {
                     <div
                       onClick={(e) => {
                         e.preventDefault();
+                        if (pending.has(book.olid)) return;
                         if (liked.includes(book.olid)) {
                           removeFromLiked(book.olid);
                         } else if (!liked.includes(book.olid)) {
