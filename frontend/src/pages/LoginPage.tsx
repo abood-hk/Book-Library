@@ -44,7 +44,6 @@ const Login = () => {
         password,
       })
       .then((res) => {
-        console.log('Access token :', res.data.accessToken);
         setAuth({
           accessToken: res.data.accessToken,
         });

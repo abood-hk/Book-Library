@@ -39,7 +39,7 @@ usersRouter.post(
   [emailValidator, passwordValidator, validate],
   loginUser,
 );
-usersRouter.post('/logout', logoutUser);
+usersRouter.delete('/logout', logoutUser);
 usersRouter.get('/refresh', refreshAccessToken);
 
 usersRouter.get('/favourites', auth, showFavourites);

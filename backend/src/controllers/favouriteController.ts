@@ -40,9 +40,11 @@ export const showFavourites = async (req: Request, res: Response) => {
     return res.status(401).json({ message: 'User not authorized' });
   }
   try {
-    const favouriteBooks = await FavouriteModel.find({
+    const favourites = await FavouriteModel.find({
       user: user._id,
-    }).populate('book');
+    }).populate<{ book: IBook }>('book');
+
+    const favouriteBooks = favourites.map((favourite) => favourite.book);
 
     res.status(200).json(favouriteBooks);
   } catch {
