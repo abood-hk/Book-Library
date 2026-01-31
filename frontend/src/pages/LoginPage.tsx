@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axiosInstance';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import type { IAuthResponse } from '../utils/interfaces';
 import useAuth from '../hooks/UseAuth';
 
@@ -10,7 +10,9 @@ const Login = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
+  const location = useLocation();
   const { setAuth } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!error) return;
@@ -20,7 +22,7 @@ const Login = () => {
     return () => clearTimeout(t);
   }, [error]);
 
-  const navigate = useNavigate();
+  const from = location?.state?.from;
 
   const submitForm = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -47,13 +49,15 @@ const Login = () => {
         setAuth({
           accessToken: res.data.accessToken,
         });
-        navigate('/');
+        if (from) {
+          navigate(from, { replace: true });
+        } else navigate('/', { replace: true });
       })
       .catch((err) => {
         const msg =
           err.response?.data?.errors?.[0]?.msg ||
           err.response?.data?.message ||
-          'Signup error';
+          'Login error';
 
         setError(msg);
       })

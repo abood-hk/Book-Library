@@ -1,7 +1,7 @@
 import api from '../api/axiosInstance';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import axios, { AxiosError } from 'axios';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import uniqueCategories, { GENRES } from '../utils/normalizeCategories';
 import fetchCover from '../utils/fetchCover';
 import useAxiosPrivate from '../hooks/UseAxiosPrivate';
@@ -24,30 +24,51 @@ interface IApiGetResponse {
 }
 
 const Books = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const page = Number(searchParams.get('page') ?? 1);
+  const limit = Number(searchParams.get('limit') ?? 30);
+  const sort = searchParams.get('sort') ?? 'default';
+  const search = searchParams.get('q') ?? '';
+  const selectedCategories = useMemo(() => {
+    const value = searchParams.get('categories');
+    return value ? value.split(',') : [];
+  }, [searchParams]);
+
   const [books, setBooks] = useState<Book[]>([]);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState<number>(30);
-  const [sort, setSort] = useState<string>('default');
   const [totalPages, setTotalPages] = useState(1);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [error, setError] = useState('');
-  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [liked, setLiked] = useState<string[]>([]);
   const [toastMessage, setToastMessage] = useState('');
   const [pending, setPending] = useState<Set<string>>(new Set(''));
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const { auth } = useAuth();
 
   const axiosPrivate = useAxiosPrivate();
 
+  const location = useLocation();
+
   const userIdRef = useRef<string | null>(null);
   const oldSortRef = useRef<string>(sort);
   const oldLimitRef = useRef<number>(limit);
-  const oldSelectedCategoriesRef = useRef(selectedCategories);
+  const oldSelectedCategoriesRef = useRef(searchParams.get('categories') ?? '');
   const oldSearchRef = useRef(search);
   const searchTimeoutRef = useRef<number | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  const updateSearchParams = (
+    updates: Record<string, string | number | null>,
+  ) => {
+    const next = new URLSearchParams(searchParams);
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value == '' || value == null) next.delete(key);
+      else next.set(key, String(value));
+    });
+    setSearchParams(next);
+  };
 
   const addToLiked = async (olid: string) => {
     if (liked.includes(olid)) return;
@@ -99,23 +120,42 @@ const Books = () => {
     }
   };
 
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  };
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   useEffect(() => {
     if (limit !== oldLimitRef.current) {
       const oldOffset = (page - 1) * oldLimitRef.current;
       const newPage = Math.floor(oldOffset / limit) + 1;
-      setPage(newPage);
+      updateSearchParams({ page: newPage });
       oldLimitRef.current = limit;
     }
     if (sort !== oldSortRef.current) {
-      setPage(1);
+      updateSearchParams({ page: 1 });
       oldSortRef.current = sort;
     }
-    if (oldSelectedCategoriesRef.current !== selectedCategories) {
-      setPage(1);
-      oldSelectedCategoriesRef.current = selectedCategories;
+    const categoriesString = searchParams.get('categories') ?? '';
+
+    if (oldSelectedCategoriesRef.current !== categoriesString) {
+      updateSearchParams({ page: 1 });
+      oldSelectedCategoriesRef.current = categoriesString;
     }
     if (oldSearchRef.current !== search) {
-      setPage(1);
+      updateSearchParams({ page: 1 });
       oldSearchRef.current = search;
     }
 
@@ -207,7 +247,9 @@ const Books = () => {
         <div className="toast toast-error">
           <span>{toastMessage}</span>
           <span className="link">
-            <Link to="/login">Login</Link>
+            <Link state={{ from: location }} to="/login">
+              Login
+            </Link>
           </span>
         </div>
       )}
@@ -217,7 +259,9 @@ const Books = () => {
           <select
             id="select-sort"
             value={sort}
-            onChange={(e) => setSort(e.target.value || 'default')}
+            onChange={(e) =>
+              updateSearchParams({ sort: e.target.value || 'default' })
+            }
           >
             <option value="default">First Created</option>
             <option value="mostReviewed">Most Reviewed</option>
@@ -230,7 +274,7 @@ const Books = () => {
             type="text"
             placeholder="Search by author or title..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => updateSearchParams({ q: e.target.value })}
           />
         </div>
 
@@ -239,7 +283,9 @@ const Books = () => {
           <select
             id="select-limit"
             value={limit}
-            onChange={(e) => setLimit(parseInt(e.target.value || '30'))}
+            onChange={(e) =>
+              updateSearchParams({ limit: parseInt(e.target.value || '30') })
+            }
           >
             <option value={10}>10</option>
             <option value={20}>20</option>
@@ -249,41 +295,63 @@ const Books = () => {
         </div>
       </div>
       <h3 className="categories-title">Filter By Category</h3>
+
       <div className="categories-container">
-        {GENRES.map((cat) => {
-          if (cat === 'Other') return;
-          return (
-            <label
-              key={cat}
-              className={`category-chip ${
-                selectedCategories.includes(cat) ? 'active' : ''
-              }`}
-            >
-              <input
-                type="checkbox"
-                checked={selectedCategories.includes(cat)}
-                onChange={(e) => {
-                  setSelectedCategories((prev) =>
-                    e.target.checked
-                      ? prev.includes(cat)
-                        ? prev
-                        : [...prev, cat]
-                      : prev.filter((e) => e !== cat),
-                  );
-                }}
-              />
-              {cat}
-            </label>
-          );
-        })}
+        <div className="categories-list">
+          {GENRES.map((cat) => {
+            if (cat === 'Other') return null;
+
+            return (
+              <label
+                key={cat}
+                className={`category-chip ${
+                  selectedCategories.includes(cat) ? 'active' : ''
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedCategories.includes(cat)}
+                  onChange={(e) => {
+                    const next = e.target.checked
+                      ? [...selectedCategories, cat]
+                      : selectedCategories.filter((c) => c !== cat);
+
+                    updateSearchParams({
+                      categories: next.length ? next.join(',') : null,
+                      page: 1,
+                    });
+                  }}
+                />
+                {cat}
+              </label>
+            );
+          })}
+        </div>
+
+        {selectedCategories.length > 0 && (
+          <button
+            className="clear-categories  cursor-pointer"
+            onClick={(e) => {
+              e.preventDefault();
+              updateSearchParams({ categories: null, page: 1 });
+            }}
+          >
+            Clear all
+          </button>
+        )}
       </div>
+
       {loading && <h2>Loading...</h2>}
       {!loading && (
         <>
           {books.length === 0 && <h2>No book found</h2>}
           <div className="grid grid-cols-3 gap-7 ">
             {books.map((book) => (
-              <Link key={book.olid} to={`/books/${book.olid}`}>
+              <Link
+                key={book.olid}
+                state={{ from: location }}
+                to={`/books/${book.olid}`}
+              >
                 <div className=" ">
                   <div className="relative">
                     <img
@@ -351,7 +419,7 @@ const Books = () => {
             const numButton = (
               <button
                 key={num}
-                onClick={() => setPage(num)}
+                onClick={() => updateSearchParams({ page: num })}
                 className={`${paginationButtonSty} ${num === page ? 'active-page' : ''}`}
               >
                 {num}
@@ -361,7 +429,7 @@ const Books = () => {
             const nextButton = (
               <button
                 key="next"
-                onClick={() => setPage(page + 1)}
+                onClick={() => updateSearchParams({ page: page + 1 })}
                 className={activePaginationButtonSty()}
               >
                 {'->'}
@@ -371,7 +439,7 @@ const Books = () => {
             const prevButton = (
               <button
                 key="prev"
-                onClick={() => setPage(page - 1)}
+                onClick={() => updateSearchParams({ page: page - 1 })}
                 className={activePaginationButtonSty()}
               >
                 {'<-'}
@@ -381,7 +449,7 @@ const Books = () => {
             const firstButton = (
               <button
                 key="first"
-                onClick={() => setPage(1)}
+                onClick={() => updateSearchParams({ page: 1 })}
                 className={activePaginationButtonSty()}
               >
                 {'<<-'}
@@ -391,7 +459,7 @@ const Books = () => {
             const lastButton = (
               <button
                 key="last"
-                onClick={() => setPage(nums.length)}
+                onClick={() => updateSearchParams({ page: nums.length })}
                 className={activePaginationButtonSty()}
               >
                 {'->>'}
@@ -417,6 +485,31 @@ const Books = () => {
           },
         )}
       </div>
+      {showScrollTop && (
+        <button
+          className="scroll-top cursor-pointer fixed bottom-6 right-6 z-50 p-3 rounded-full bg-primary shadow-lg hover:scale-110 transition-transform"
+          aria-label="Scroll to top"
+          onClick={(e) => {
+            e.preventDefault();
+            scrollToTop();
+          }}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="w-5 h-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M5 15l7-7 7 7"
+            />
+          </svg>
+        </button>
+      )}
     </>
   );
 };

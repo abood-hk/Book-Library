@@ -201,6 +201,88 @@
 }
 
 @layer components {
+  .book-details-clean {
+    @apply grid gap-12 lg:grid-cols-2 mt-16;
+  }
+
+  .book-left {
+    @apply flex flex-col items-center text-center gap-3;
+  }
+
+  .book-right {
+    @apply flex items-center;
+    height: 380px;
+  }
+}
+
+@layer components {
+  .book-cover-clean {
+    @apply w-56 rounded-xl shadow-md object-contain;
+  }
+}
+
+@layer components {
+  .book-cover-slot {
+    @apply relative flex items-center justify-center;
+    width: 260px;
+    height: 380px;
+  }
+
+  .book-cover-clean {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+}
+
+@layer components {
+  .book-heart {
+    @apply absolute top-1 right-1 w-9 h-9
+           flex items-center justify-center
+           rounded-full cursor-pointer
+           transition;
+    background-color: rgb(var(--bg) / 0.8);
+    backdrop-filter: blur(6px);
+  }
+
+  .book-heart:hover {
+    transform: scale(1.1);
+  }
+
+  .heart-icon {
+    @apply w-6 h-6 transition-transform;
+    fill: none;
+    stroke: rgb(var(--primary));
+    stroke-width: 2;
+  }
+
+  .heart-icon.active {
+    fill: rgb(var(--primary));
+    transform: scale(1.15);
+  }
+}
+
+@layer components {
+  .book-author {
+    @apply text-sm font-medium;
+    color: rgb(var(--primary));
+  }
+
+  .book-categories {
+    @apply text-sm;
+    color: rgb(var(--text-muted));
+  }
+
+  .book-right p {
+    height: 100%;
+    display: grid;
+    place-items: center;
+    @apply text-sm leading-relaxed;
+    color: rgb(var(--text));
+  }
+}
+
+@layer components {
   .auth-page {
     height: 90svh;
     @apply flex items-center justify-center px-4 overflow-hidden;
@@ -222,6 +304,10 @@
 
   .dark .auth-card {
     box-shadow: none;
+  }
+
+  .scroll-top {
+    color: var(--text);
   }
 
   .auth-header {
@@ -289,6 +375,56 @@
   .auth-footer a {
     color: rgb(var(--primary));
     font-weight: 500;
+  }
+}
+
+@layer components {
+  .book-details-header {
+    @apply w-full flex justify-start mb-6;
+  }
+}
+
+@layer components {
+  .categories-container {
+    @apply flex items-start justify-between gap-4 flex-wrap;
+  }
+
+  .categories-list {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .clear-categories {
+    @apply text-sm font-medium px-2 py-1 rounded-md transition;
+    color: rgb(var(--text-muted));
+    border: none;
+    background: transparent;
+    white-space: nowrap;
+  }
+
+  .clear-categories:hover {
+    color: rgb(var(--primary));
+  }
+}
+
+@layer components {
+  .back-button {
+    @apply inline-flex items-center gap-2 mb-6 text-sm font-medium transition;
+    color: rgb(var(--text-muted));
+    border: none;
+    background: transparent;
+    padding: 0;
+  }
+
+  .back-button:hover {
+    color: rgb(var(--primary));
+  }
+
+  .back-icon {
+    @apply w-4 h-4 transition-transform;
+  }
+
+  .back-button:hover .back-icon {
+    transform: translateX(-3px);
   }
 }
 

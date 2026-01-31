@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import useAxiosPrivate from '../hooks/UseAxiosPrivate';
 import useAuth from '../hooks/UseAuth';
 import type { Book } from './Books';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import fetchCover from '../utils/fetchCover';
 import uniqueCategories from '../utils/normalizeCategories';
 
@@ -13,10 +13,29 @@ const FavouriteBooks = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [pending, setPending] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const { auth } = useAuth();
+  const location = useLocation();
 
   const userIdRef = useRef<string | null>(null);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  };
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const addToLiked = async (olid: string) => {
     if (liked.includes(olid)) return;
@@ -127,7 +146,9 @@ const FavouriteBooks = () => {
         <div className="toast toast-error">
           <span>{toastMessage}</span>
           <span className="link">
-            <Link to="/login">Login</Link>
+            <Link to="/login" state={{ from: location }}>
+              Login
+            </Link>
           </span>
         </div>
       )}
@@ -188,6 +209,31 @@ const FavouriteBooks = () => {
             </Link>
           ))}
         </div>
+        {showScrollTop && (
+          <button
+            className="scroll-top cursor-pointer fixed bottom-6 right-6 z-50 p-3 rounded-full bg-primary shadow-lg hover:scale-110 transition-transform"
+            aria-label="Scroll to top"
+            onClick={(e) => {
+              e.preventDefault();
+              scrollToTop();
+            }}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 15l7-7 7 7"
+              />
+            </svg>
+          </button>
+        )}
       </>
     </>
   );

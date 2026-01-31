@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Books from './pages/Books';
 import BookDatails from './pages/BookDatails';
 import Navbar from './components/Navbar';
@@ -16,7 +16,7 @@ function App() {
       <AuthProvider>
         <Navbar />
         <Routes>
-          <Route path="/" element={<Books />} />
+          <Route path="/" element={<Navigate to="/books" replace />} />
           <Route path="/books" element={<Books />} />
           <Route path="/books/:olid" element={<BookDatails />} />
           <Route path="/books/favourites" element={<FavouriteBooks />} />

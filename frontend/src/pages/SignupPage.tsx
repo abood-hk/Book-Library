@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axiosInstance';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import type { IAuthResponse } from '../utils/interfaces';
+import useAuth from '../hooks/UseAuth';
 
 const Signup = () => {
   const [username, setUsername] = useState<string>('');
@@ -9,6 +10,10 @@ const Signup = () => {
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+
+  const { setAuth } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (!error) return;
@@ -18,7 +23,7 @@ const Signup = () => {
     return () => clearTimeout(t);
   }, [error]);
 
-  const navigate = useNavigate();
+  const from = location?.state?.from;
 
   const submitForm = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -43,12 +48,15 @@ const Signup = () => {
 
     api
       .post<IAuthResponse>('/users/signup', {
-        username: username.trim(),
         email: email.trim(),
         password,
       })
-      .then(() => {
-        navigate('/');
+      .then((res) => {
+        setAuth({
+          accessToken: res.data.accessToken,
+        });
+        if (from) navigate(from, { replace: true });
+        else navigate('/', { replace: true });
       })
       .catch((err) => {
         const msg =
