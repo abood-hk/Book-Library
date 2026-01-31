@@ -8,6 +8,26 @@ import uniqueCategories from '../utils/normalizeCategories';
 import useAuth from '../hooks/UseAuth';
 import { Link, useNavigate } from 'react-router-dom';
 
+type User = {
+  username: string;
+};
+
+type Review = {
+  rating: number;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+  user: User;
+};
+
+interface IApiReviewResponse {
+  review: Review;
+}
+
+interface IApiReviewsResponse {
+  reviews: Review[];
+}
+
 const BookDetails = () => {
   const { olid } = useParams<{ olid: string }>();
 
@@ -15,6 +35,11 @@ const BookDetails = () => {
   const [liked, setLiked] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [pending, setPending] = useState<Set<string>>(new Set(''));
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [content, setContent] = useState<string>();
+  const [rating, setRating] = useState<number>(0);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -67,6 +92,143 @@ const BookDetails = () => {
     }
   };
 
+  const myReview = (): boolean => {
+    if (auth.accessToken) {
+      const payload = JSON.parse(atob(auth.accessToken.split('.')[1]));
+    }
+  };
+
+  const submitReview = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (rating === null || rating === undefined) {
+      setError('Rating is required');
+      return;
+    }
+
+    if (typeof rating !== 'number' || Number.isNaN(rating)) {
+      setError('Rating must be a number');
+      return;
+    }
+
+    if (!Number.isInteger(rating)) {
+      setError('Rating must be an integer');
+      return;
+    }
+
+    if (rating < 1 || rating > 5) {
+      setError('Rating must be between 1 and 5');
+      return;
+    }
+
+    if (content) {
+      if (typeof content !== 'string') {
+        setError('Comment must be a string');
+        return;
+      }
+
+      if (content.trim().length < 1 || content.length > 700) {
+        setError('Comment must be between 1 and 700 characters');
+        return;
+      }
+    }
+
+    setError(null);
+    setLoading(true);
+    axiosPrivate
+      .post<IApiReviewResponse>(`/users/reviews/${olid}`, {
+        content: content ? content : '',
+        rating,
+      })
+      .then((res) => {
+        setReviews((prev) => [...prev, res.data.review]);
+      })
+      .catch((err) => {
+        const msg =
+          err.response?.data?.errors?.[0]?.msg ||
+          err.response?.data?.message ||
+          'Review error';
+
+        setError(msg);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+
+  const updateReview = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (rating === null || rating === undefined) {
+      setError('Rating is required');
+      return;
+    }
+
+    if (typeof rating !== 'number' || Number.isNaN(rating)) {
+      setError('Rating must be a number');
+      return;
+    }
+
+    if (!Number.isInteger(rating)) {
+      setError('Rating must be an integer');
+      return;
+    }
+
+    if (rating < 1 || rating > 5) {
+      setError('Rating must be between 1 and 5');
+      return;
+    }
+
+    if (content) {
+      if (typeof content !== 'string') {
+        setError('Comment must be a string');
+        return;
+      }
+
+      if (content.trim().length < 1 || content.length > 700) {
+        setError('Comment must be between 1 and 700 characters');
+        return;
+      }
+    }
+
+    setError(null);
+    setLoading(true);
+    axiosPrivate
+      .put<IApiReviewResponse>(`/users/reviews/${olid}`, {
+        content: content ? content : '',
+        rating,
+      })
+      .then((res) => {
+        setReviews((prev) =>
+          prev.map((review) => {
+            if (review.user.username === res.data.review.user.username) {
+              review.content = res.data.review.content;
+              review.rating = res.data.review.rating;
+            }
+            return review;
+          }),
+        );
+      })
+      .catch((err) => {
+        const msg =
+          err.response?.data?.errors?.[0]?.msg ||
+          err.response?.data?.message ||
+          'Review error';
+
+        setError(msg);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    if (!error) return;
+
+    const t = setTimeout(() => setError(null), 3000);
+
+    return () => clearTimeout(t);
+  }, [error]);
   useEffect(() => {
     if (!toastMessage) return;
 
@@ -80,18 +242,16 @@ const BookDetails = () => {
   }, [olid]);
 
   useEffect(() => {
-    if (!auth.accessToken) {
-      setLiked(false);
-      return;
-    }
-    const payload = JSON.parse(atob(auth.accessToken.split('.')[1]));
-    const currentId = payload._id;
+    if (auth.accessToken) {
+      const payload = JSON.parse(atob(auth.accessToken.split('.')[1]));
+      const currentId = payload._id;
 
-    if (userIdRef.current === currentId) {
-      return;
-    }
+      if (userIdRef.current === currentId) {
+        return;
+      }
 
-    userIdRef.current = currentId;
+      userIdRef.current = currentId;
+    }
 
     axiosPrivate
       .get<string[]>('/users/favouritesIds')
@@ -105,6 +265,17 @@ const BookDetails = () => {
         setLiked(false);
       });
   }, [auth.accessToken]);
+
+  useEffect(() => {
+    api
+      .get<IApiReviewsResponse>(`/users/reviews/${olid}`)
+      .then((res) => {
+        setReviews(res.data.reviews);
+      })
+      .catch((err) => {
+        console.error('Error occured while fetching reviews : ', err);
+      });
+  }, []);
 
   if (!book) return <p>Loading...</p>;
 
@@ -120,6 +291,7 @@ const BookDetails = () => {
           </span>
         </div>
       )}
+
       <div className="book-details-header">
         <button
           className="back-button cursor-pointer"
@@ -199,10 +371,54 @@ const BookDetails = () => {
 
         <div className="book-right">
           <p className={!book.description ? 'opacity-80 italic' : ''}>
-            {book.description || 'No Description Available.'}
+            {book.description || 'No Available Description.'}
           </p>
         </div>
-        <div>Review</div>
+        <div>
+          {error && <p>{error}</p>}
+          <form onSubmit={submitReview} noValidate>
+            <textarea
+              rows={1}
+              value={content}
+              onChange={(e) => {
+                e.preventDefault();
+                setContent(e.target.value);
+              }}
+              placeholder="Write a review..."
+            />
+            <select
+              value={rating}
+              onChange={(e) => {
+                e.preventDefault();
+                setRating(Number(e.target.value));
+              }}
+            >
+              <option defaultChecked value={0}>
+                Select
+              </option>
+              <option value={1}>1</option>
+              <option value={2}>2</option>
+              <option value={3}>3</option>
+              <option value={4}>4</option>
+              <option value={5}>5</option>
+            </select>
+            <button disabled={loading} type="submit">
+              Post Review
+            </button>
+          </form>
+          {reviews.map((review) => {
+            {
+              return (
+                <>
+                  <p>{review.user.username}</p>
+                  <p>{review.content}</p>
+                  <p>{review.rating}</p>
+                  {review.createdAt !== review.updatedAt && <p>Edited</p>}
+                </>
+              );
+            }
+          }) || 'No Reviews'}
+        </div>
       </div>
     </>
   );

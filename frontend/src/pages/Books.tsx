@@ -208,19 +208,16 @@ const Books = () => {
   }, [page, limit, sort, selectedCategories, search]);
 
   useEffect(() => {
-    if (!auth.accessToken) {
-      setLiked([]);
-      return;
+    if (auth.accessToken) {
+      const payload = JSON.parse(atob(auth.accessToken.split('.')[1]));
+      const currentId = payload._id;
+
+      if (userIdRef.current === currentId) {
+        return;
+      }
+
+      userIdRef.current = currentId;
     }
-    const payload = JSON.parse(atob(auth.accessToken.split('.')[1]));
-    const currentId = payload._id;
-
-    if (userIdRef.current === currentId) {
-      return;
-    }
-
-    userIdRef.current = currentId;
-
     axiosPrivate
       .get<string[]>('/users/favouritesIds')
       .then((res) => {

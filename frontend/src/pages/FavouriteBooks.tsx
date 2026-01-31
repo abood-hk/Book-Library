@@ -93,21 +93,20 @@ const FavouriteBooks = () => {
   };
 
   useEffect(() => {
-    if (!auth.accessToken) {
+    if (auth.accessToken) {
       setBooks([]);
       setLiked([]);
       setLoading(false);
       userIdRef.current = null;
-      return;
-    }
-    const payload = JSON.parse(atob(auth.accessToken.split('.')[1]));
-    const currentId = payload._id;
+      const payload = JSON.parse(atob(auth.accessToken.split('.')[1]));
+      const currentId = payload._id;
 
-    if (userIdRef.current === currentId) {
-      return;
-    }
+      if (userIdRef.current === currentId) {
+        return;
+      }
 
-    userIdRef.current = currentId;
+      userIdRef.current = currentId;
+    }
     setLoading(true);
 
     axiosPrivate

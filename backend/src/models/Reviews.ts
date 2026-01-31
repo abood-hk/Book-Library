@@ -27,12 +27,12 @@ const reviewsSchema = new Schema<IReviews>(
     content: {
       type: String,
       trim: true,
-      minLength: 3,
-      maxLength: 400,
+      minLength: 1,
+      maxLength: 700,
       required: false,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 reviewsSchema.index({ user: 1, book: 1 }, { unique: true });

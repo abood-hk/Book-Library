@@ -32,7 +32,7 @@ export const usernameValidate = body('username')
   .matches(/^[a-zA-Z0-9_]+$/)
   .withMessage('Username can only contain letters, numbers, and underscores');
 
-export const ratingValidate = body('rate')
+export const ratingValidate = body('rating')
   .exists()
   .withMessage('rating is required')
   .isNumeric()
@@ -50,8 +50,8 @@ export const ratingValidate = body('rate')
 export const contentValidate = body('content')
   .optional()
   .isString()
-  .isLength({ min: 3, max: 1000 })
-  .withMessage('Comment must be between 3 and 1000 characters');
+  .isLength({ min: 1, max: 700 })
+  .withMessage('Comment must be between 1 and 700 characters');
 
 export const validate = (req: Request, res: Response, next: NextFunction) => {
   const errors = validationResult(req);
