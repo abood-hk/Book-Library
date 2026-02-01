@@ -46,8 +46,10 @@ const Login = () => {
         password,
       })
       .then((res) => {
+        const payload = JSON.parse(atob(res.data.accessToken.split('.')[1]));
         setAuth({
           accessToken: res.data.accessToken,
+          user: { role: payload.role },
         });
         if (from) {
           navigate(from, { replace: true });

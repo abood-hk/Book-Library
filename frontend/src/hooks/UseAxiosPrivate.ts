@@ -25,7 +25,11 @@ const useAxiosPrivate = () => {
           try {
             const refreshRes = await api.get('/users/refresh');
             const newAccessToken = refreshRes.data.accessToken;
-            setAuth({ accessToken: newAccessToken });
+            const payload = JSON.parse(atob(newAccessToken.split('.')[1]));
+            setAuth({
+              accessToken: newAccessToken,
+              user: { role: payload.role },
+            });
             prevRequest.headers.Authorization = `Bearer ${newAccessToken}`;
             return privateApi(prevRequest);
           } catch (refreshError) {

@@ -8,6 +8,8 @@ import ToggleThemes from './components/ToggleThemes';
 import Login from './pages/LoginPage';
 import { AuthProvider } from './context/AuthProvider';
 import FavouriteBooks from './pages/FavouriteBooks';
+import ReviewedBooks from './pages/ReviewedBooks';
+import BlacklistedBooks from './pages/BlacklistedBooks';
 
 function App() {
   return (
@@ -22,6 +24,8 @@ function App() {
           <Route path="/books/favourites" element={<FavouriteBooks />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/books/reviews" element={<ReviewedBooks />} />
+          <Route path="/books/blacklisted" element={<BlacklistedBooks />} />
         </Routes>
       </AuthProvider>
     </>

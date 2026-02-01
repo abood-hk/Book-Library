@@ -3,16 +3,18 @@ import api from '../api/axiosInstance';
 import useAxiosPrivate from '../hooks/UseAxiosPrivate';
 import type { Book } from './Books';
 import fetchCover from '../utils/fetchCover';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import uniqueCategories from '../utils/normalizeCategories';
 import useAuth from '../hooks/UseAuth';
 import { Link, useNavigate } from 'react-router-dom';
 
 type User = {
   username: string;
+  _id: string;
 };
 
 type Review = {
+  _id: string;
   rating: number;
   content: string;
   createdAt: Date;
@@ -34,12 +36,16 @@ const BookDetails = () => {
   const [book, setBook] = useState<Book | null>(null);
   const [liked, setLiked] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [pending, setPending] = useState<Set<string>>(new Set(''));
+  const [pending, setPending] = useState<Set<string>>(new Set());
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [content, setContent] = useState<string>();
+  const [content, setContent] = useState<string>('');
   const [rating, setRating] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingDelete, setLoadingDelete] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [adminDelete, setAdminDelete] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -47,6 +53,8 @@ const BookDetails = () => {
   const axiosPrivate = useAxiosPrivate();
 
   const userIdRef = useRef<string | null>(null);
+  const contentRef = useRef<string | null>(null);
+  const ratingRef = useRef<number | null>(null);
 
   const from = location?.state?.from;
 
@@ -92,43 +100,62 @@ const BookDetails = () => {
     }
   };
 
-  const myReview = (): boolean => {
-    if (auth.accessToken) {
-      const payload = JSON.parse(atob(auth.accessToken.split('.')[1]));
+  const userId = useMemo(() => {
+    try {
+      if (!auth.accessToken) return null;
+      return JSON.parse(atob(auth.accessToken.split('.')[1]))._id;
+    } catch {
+      return null;
     }
+  }, [auth.accessToken]);
+
+  const myReview = (review: Review): boolean => {
+    if (!userId) return false;
+    return userId === review.user._id;
   };
 
   const submitReview = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    const existingReview = reviews.find((review) => review.user._id === userId);
+
+    if (existingReview) {
+      setError(
+        'You’ve already reviewed this book. You can edit or delete your existing review.',
+      );
+      return;
+    }
+
     if (rating === null || rating === undefined) {
-      setError('Rating is required');
+      setError('Please select a rating before submitting your review.');
       return;
     }
 
     if (typeof rating !== 'number' || Number.isNaN(rating)) {
-      setError('Rating must be a number');
+      setError('Invalid rating value. Please choose a rating from 1 to 5.');
       return;
     }
 
     if (!Number.isInteger(rating)) {
-      setError('Rating must be an integer');
+      setError('Rating must be a whole number between 1 and 5.');
       return;
     }
 
     if (rating < 1 || rating > 5) {
-      setError('Rating must be between 1 and 5');
+      setError('Please choose a rating between 1 and 5 stars.');
       return;
     }
 
     if (content) {
       if (typeof content !== 'string') {
-        setError('Comment must be a string');
+        setError('Invalid comment format. Please try again.');
         return;
       }
 
       if (content.trim().length < 1 || content.length > 700) {
-        setError('Comment must be between 1 and 700 characters');
+        setError(
+          'Your review is too long. Please keep it under 700 characters.',
+        );
         return;
       }
     }
@@ -142,12 +169,14 @@ const BookDetails = () => {
       })
       .then((res) => {
         setReviews((prev) => [...prev, res.data.review]);
+        setContent('');
+        setRating(0);
       })
       .catch((err) => {
         const msg =
           err.response?.data?.errors?.[0]?.msg ||
           err.response?.data?.message ||
-          'Review error';
+          'Something went wrong while submitting your review. Please try again.';
 
         setError(msg);
       })
@@ -160,35 +189,46 @@ const BookDetails = () => {
     e.preventDefault();
 
     if (rating === null || rating === undefined) {
-      setError('Rating is required');
+      setError('Please select a rating before submitting your review.');
       return;
     }
 
     if (typeof rating !== 'number' || Number.isNaN(rating)) {
-      setError('Rating must be a number');
+      setError('Invalid rating value. Please choose a rating from 1 to 5.');
       return;
     }
 
     if (!Number.isInteger(rating)) {
-      setError('Rating must be an integer');
+      setError('Rating must be a whole number between 1 and 5.');
       return;
     }
 
     if (rating < 1 || rating > 5) {
-      setError('Rating must be between 1 and 5');
+      setError('Please choose a rating between 1 and 5 stars.');
       return;
     }
 
     if (content) {
       if (typeof content !== 'string') {
-        setError('Comment must be a string');
+        setError('Invalid comment format. Please try again.');
         return;
       }
 
       if (content.trim().length < 1 || content.length > 700) {
-        setError('Comment must be between 1 and 700 characters');
+        setError(
+          'Your review is too long. Please keep it under 700 characters.',
+        );
         return;
       }
+    }
+
+    if (ratingRef.current === rating && contentRef.current === content) {
+      setContent('');
+      setRating(0);
+      ratingRef.current = null;
+      contentRef.current = null;
+      setEditing(false);
+      return;
     }
 
     setError(null);
@@ -201,11 +241,37 @@ const BookDetails = () => {
       .then((res) => {
         setReviews((prev) =>
           prev.map((review) => {
-            if (review.user.username === res.data.review.user.username) {
-              review.content = res.data.review.content;
-              review.rating = res.data.review.rating;
+            if (review.user._id === res.data.review.user._id) {
+              return res.data.review;
             }
             return review;
+          }),
+        );
+        setContent('');
+        setRating(0);
+      })
+      .catch((err) => {
+        const msg =
+          err.response?.data?.errors?.[0]?.msg ||
+          err.response?.data?.message ||
+          'Something went wrong while updating your review. Please try again.';
+
+        setError(msg);
+      })
+      .finally(() => {
+        setLoading(false);
+        setEditing(false);
+      });
+  };
+
+  const deleteReview = () => {
+    setLoadingDelete(true);
+    axiosPrivate
+      .delete<IApiReviewResponse>(`/users/reviews/${olid}`)
+      .then((res) => {
+        setReviews((prev) =>
+          prev.filter((review) => {
+            return review.user._id !== res.data.review.user._id;
           }),
         );
       })
@@ -213,13 +279,55 @@ const BookDetails = () => {
         const msg =
           err.response?.data?.errors?.[0]?.msg ||
           err.response?.data?.message ||
-          'Review error';
+          'Failed to delete your review. Please try again.';
 
         setError(msg);
       })
       .finally(() => {
-        setLoading(false);
+        setLoadingDelete(false);
+        setConfirmDeleteId(null);
       });
+  };
+
+  const adminDeleteReview = (reviewId: string) => {
+    setAdminDelete(true);
+    axiosPrivate
+      .delete<IApiReviewResponse>(`/admin/reviews/${reviewId}`)
+      .then((res) => {
+        setReviews((prev) =>
+          prev.filter((review) => {
+            return review._id !== res.data.review._id;
+          }),
+        );
+      })
+      .catch((err) => {
+        const msg =
+          err.response?.data?.errors?.[0]?.msg ||
+          err.response?.data?.message ||
+          'Failed to delete the review. Please try again.';
+
+        setError(msg);
+      })
+      .finally(() => {
+        setLoadingDelete(false);
+        setConfirmDeleteId(null);
+      });
+  };
+
+  const startEditing = (review: Review) => {
+    setContent(review.content);
+    setRating(review.rating);
+
+    contentRef.current = review.content;
+    ratingRef.current = review.rating;
+
+    setEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setContent('');
+    setRating(0);
+    setEditing(false);
   };
 
   useEffect(() => {
@@ -264,7 +372,7 @@ const BookDetails = () => {
       .catch(() => {
         setLiked(false);
       });
-  }, [auth.accessToken]);
+  }, [auth.accessToken, olid]);
 
   useEffect(() => {
     api
@@ -273,9 +381,9 @@ const BookDetails = () => {
         setReviews(res.data.reviews);
       })
       .catch((err) => {
-        console.error('Error occured while fetching reviews : ', err);
+        console.error('Error occurred while fetching reviews : ', err);
       });
-  }, []);
+  }, [olid]);
 
   if (!book) return <p>Loading...</p>;
 
@@ -374,50 +482,145 @@ const BookDetails = () => {
             {book.description || 'No Available Description.'}
           </p>
         </div>
-        <div>
-          {error && <p>{error}</p>}
-          <form onSubmit={submitReview} noValidate>
-            <textarea
-              rows={1}
-              value={content}
-              onChange={(e) => {
-                e.preventDefault();
-                setContent(e.target.value);
-              }}
-              placeholder="Write a review..."
-            />
-            <select
-              value={rating}
-              onChange={(e) => {
-                e.preventDefault();
-                setRating(Number(e.target.value));
-              }}
+        <div className="reviews-section lg:col-span-2">
+          <div className="reviews-inner">
+            <h3 className="reviews-title">Reviews</h3>
+
+            {error && <p className="review-error">{error}</p>}
+
+            <form
+              className="review-form"
+              onSubmit={editing ? updateReview : submitReview}
+              noValidate
             >
-              <option defaultChecked value={0}>
-                Select
-              </option>
-              <option value={1}>1</option>
-              <option value={2}>2</option>
-              <option value={3}>3</option>
-              <option value={4}>4</option>
-              <option value={5}>5</option>
-            </select>
-            <button disabled={loading} type="submit">
-              Post Review
-            </button>
-          </form>
-          {reviews.map((review) => {
-            {
-              return (
-                <>
-                  <p>{review.user.username}</p>
-                  <p>{review.content}</p>
-                  <p>{review.rating}</p>
-                  {review.createdAt !== review.updatedAt && <p>Edited</p>}
-                </>
-              );
-            }
-          }) || 'No Reviews'}
+              <textarea
+                rows={3}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Write your thoughts about this book..."
+              />
+
+              <div className="review-form-footer">
+                <select
+                  value={rating}
+                  onChange={(e) => setRating(Number(e.target.value))}
+                >
+                  <option value={0}>Rating</option>
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+
+                <div className="review-actions">
+                  <button disabled={loading} type="submit">
+                    {loading
+                      ? editing
+                        ? 'Updating...'
+                        : 'Posting...'
+                      : editing
+                        ? 'Update Review'
+                        : 'Post Review'}
+                  </button>
+
+                  {editing && (
+                    <button
+                      type="button"
+                      className="cancel-btn"
+                      onClick={cancelEditing}
+                      disabled={loading}
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </div>
+            </form>
+
+            {reviews.length === 0 ? (
+              <p className="no-reviews">No reviews yet.</p>
+            ) : (
+              <div className="reviews-list">
+                {reviews.map((review) => (
+                  <div key={review.user._id} className="review-card">
+                    <div className="review-header">
+                      <div>
+                        <p className="review-user">{review.user.username}</p>
+                        <p className="review-rating">
+                          {'★'.repeat(review.rating)}
+                          {'☆'.repeat(5 - review.rating)}
+                        </p>
+                      </div>
+
+                      {(myReview(review) ||
+                        auth.user?.role === 'admin' ||
+                        auth.user?.role === 'super admin') && (
+                        <div className="review-controls">
+                          {myReview(review) && (
+                            <button onClick={() => startEditing(review)}>
+                              Edit
+                            </button>
+                          )}
+
+                          <button
+                            className="danger"
+                            onClick={() => {
+                              setAdminDelete(
+                                auth.user?.role === 'admin' ||
+                                  auth.user?.role === 'super admin',
+                              );
+                              setConfirmDeleteId(review.user._id);
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {confirmDeleteId === review.user._id && (
+                      <div className="review-confirm">
+                        <p>Delete Your review?</p>
+                        <div>
+                          <button
+                            disabled={loadingDelete}
+                            onClick={() => {
+                              if (adminDelete) {
+                                adminDeleteReview(review._id);
+                                setAdminDelete(false);
+                              } else {
+                                deleteReview();
+                              }
+                            }}
+                            className="danger"
+                          >
+                            {loadingDelete ? 'Deleting...' : 'Yes'}
+                          </button>
+                          <button
+                            disabled={loadingDelete}
+                            onClick={() => {
+                              setAdminDelete(false);
+                              setConfirmDeleteId(null);
+                            }}
+                          >
+                            No
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {review.content && (
+                      <p className="review-content">{review.content}</p>
+                    )}
+
+                    {review.createdAt !== review.updatedAt && (
+                      <p className="review-edited">Edited</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </>

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import BooksModel from '../models/Book.js';
+import BlacklistModel from '../models/Blacklist.js';
 
 interface OpenLibraryDoc {
   key: string;
@@ -33,14 +34,14 @@ const fetchWorkDetails = async (olid: string, signal: AbortSignal) => {
 
 const fetchAllEditionIsbns = async (
   editionKeys: string[],
-  signal: AbortSignal
+  signal: AbortSignal,
 ) => {
   const allIsbns: string[] = [];
   for (const editionOlid of editionKeys) {
     try {
       const res = await axios.get(
         `https://openlibrary.org/books/${editionOlid}.json`,
-        { signal }
+        { signal },
       );
       if (Array.isArray(res.data.isbn_10)) allIsbns.push(...res.data.isbn_10);
       if (Array.isArray(res.data.isbn_13)) allIsbns.push(...res.data.isbn_13);
@@ -50,7 +51,7 @@ const fetchAllEditionIsbns = async (
       } else {
         console.warn(
           `Failed to fetch edition ${editionOlid}:`,
-          (err as Error).message
+          (err as Error).message,
         );
       }
     }
@@ -79,9 +80,9 @@ const fetchBookIfNotFound = async (query: string) => {
 
     const searchRes = await axios.get(
       `https://openlibrary.org/search.json?q=${encodeURIComponent(
-        query
+        query,
       )}&limit=5`,
-      { signal: searchController.signal }
+      { signal: searchController.signal },
     );
 
     const docs: OpenLibraryDoc[] = searchRes.data.docs;
@@ -91,6 +92,8 @@ const fetchBookIfNotFound = async (query: string) => {
     if (!doc) return null;
 
     const workOlid = doc.key.replace('/works/', '');
+    const isBlacklisted = await BlacklistModel.exists({ olid: workOlid });
+    if (isBlacklisted) return null;
     const title = doc.title;
     const author_name = Array.isArray(doc.author_name)
       ? doc.author_name[0]
@@ -99,11 +102,11 @@ const fetchBookIfNotFound = async (query: string) => {
 
     const isbns = await fetchAllEditionIsbns(
       editionKeys,
-      new AbortController().signal
+      new AbortController().signal,
     );
     const { description, subjects } = await fetchWorkDetails(
       workOlid,
-      new AbortController().signal
+      new AbortController().signal,
     );
 
     const newBook = await BooksModel.findOneAndUpdate(
@@ -120,7 +123,7 @@ const fetchBookIfNotFound = async (query: string) => {
           categories: subjects.slice(0, 5),
         },
       },
-      { new: true, upsert: true }
+      { new: true, upsert: true },
     );
 
     return newBook;
@@ -130,7 +133,7 @@ const fetchBookIfNotFound = async (query: string) => {
     } else {
       console.error(
         `Failed to fetch/save book "${query}":`,
-        (err as Error).message
+        (err as Error).message,
       );
     }
     return null;

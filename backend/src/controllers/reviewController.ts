@@ -1,6 +1,26 @@
 import { Request, Response } from 'express';
 import ReviewsModel from '../models/Reviews.js';
 import BooksModel from '../models/Book.js';
+import type { IBook } from '../models/Book.js';
+
+export const getMyReviews = async (req: Request, res: Response) => {
+  const user = req.user;
+
+  if (!user) {
+    return res.status(401).json({ message: 'User not authorized' });
+  }
+  try {
+    const reviews = await ReviewsModel.find({
+      user: user._id,
+    }).populate<{ book: IBook }>('book');
+
+    const reviewedBooks = reviews.map((review) => review.book);
+
+    res.status(200).json(reviewedBooks);
+  } catch {
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
 
 export const addReview = async (req: Request, res: Response) => {
   const user = req.user;
@@ -28,7 +48,7 @@ export const addReview = async (req: Request, res: Response) => {
       rating,
       content,
     });
-    review.populate('user', 'username');
+    await review.populate('user', 'username');
     return res.status(201).json({ message: 'Review added', review });
   } catch (err) {
     if (
@@ -67,13 +87,14 @@ export const removeReview = async (req: Request, res: Response) => {
     const review = await ReviewsModel.findOneAndDelete({
       user: user._id,
       book: book._id,
-    });
+    }).populate('user', 'username');
 
     if (!review) {
-      return res.status(404).json({ message: 'Review not found', review });
+      return res.status(404).json({ message: 'Review not found' });
     }
-
-    return res.status(200).json({ message: 'Review deleted successfully' });
+    return res
+      .status(200)
+      .json({ message: 'Review deleted successfully', review });
   } catch {
     return res.status(500).json({ message: 'Server error' });
   }

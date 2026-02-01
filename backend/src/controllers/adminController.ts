@@ -4,6 +4,16 @@ import ReviewsModel from '../models/Reviews.js';
 import BooksModel from '../models/Book.js';
 import BlacklistModel from '../models/Blacklist.js';
 
+export const getBlacklistedBooks = async (req: Request, res: Response) => {
+  try {
+    const blacklisted = await BlacklistModel.find({});
+
+    res.status(200).json(blacklisted);
+  } catch {
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
 export const adminRemoveReview = async (req: Request, res: Response) => {
   const { reviewId } = req.params;
 
@@ -12,11 +22,13 @@ export const adminRemoveReview = async (req: Request, res: Response) => {
   }
 
   try {
-    const result = await ReviewsModel.deleteOne({ _id: reviewId });
-    if (result.deletedCount === 0) {
+    const review = await ReviewsModel.findByIdAndDelete({ _id: reviewId });
+    if (!review) {
       return res.status(404).json({ message: 'Review not found' });
     }
-    return res.status(200).json({ message: 'Review deleted successfully' });
+    return res
+      .status(200)
+      .json({ message: 'Review deleted successfully', review });
   } catch {
     return res.status(500).json({ message: 'Server error' });
   }

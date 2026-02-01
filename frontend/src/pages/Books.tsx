@@ -41,7 +41,7 @@ const Books = () => {
   const [loading, setLoading] = useState(false);
   const [liked, setLiked] = useState<string[]>([]);
   const [toastMessage, setToastMessage] = useState('');
-  const [pending, setPending] = useState<Set<string>>(new Set(''));
+  const [pending, setPending] = useState<Set<string>>(new Set());
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   const { auth } = useAuth();
@@ -118,6 +118,21 @@ const Books = () => {
         return next;
       });
     }
+  };
+
+  const blackList = (olid: string) => {
+    axiosPrivate
+      .post(`/admin/books/${olid}`)
+      .then(() => {
+        setBooks((prev) =>
+          prev.filter((book) => {
+            return book.olid !== olid;
+          }),
+        );
+      })
+      .catch(() => {
+        console.error('Error prevented blacklisting');
+      });
   };
 
   const scrollToTop = () => {
@@ -391,6 +406,18 @@ const Books = () => {
                         />
                       </svg>
                     </div>
+                    {(auth.user?.role === 'admin' ||
+                      auth.user?.role === 'super admin') && (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          blackList(book.olid);
+                        }}
+                        className="absolute top-2 left-2 px-3 py-1 text-xs font-semibold text-white bg-gray-800/80 backdrop-blur-sm rounded-full shadow-md hover:bg-gray-700/80 transition-colors"
+                      >
+                        Blacklist
+                      </button>
+                    )}
                   </div>
                   <h2>{book.title}</h2>
                   <p>{book.author_name}</p>

@@ -50,6 +50,9 @@ const blacklistSchema = new Schema<IBlacklist>(
   },
 );
 
-const BlacklistModel = mongoose.model<IBlacklist>('blacklist', blacklistSchema);
+const BlacklistModel = mongoose.model<IBlacklist>(
+  'blacklists',
+  blacklistSchema,
+);
 
 export default BlacklistModel;

@@ -5,6 +5,7 @@ import {
   adminRemoveReview,
   blacklistBook,
   removeFromBlacklist,
+  getBlacklistedBooks,
 } from '../controllers/adminController.js';
 import superAdminOnly from '../middleware/superAdminsOnlyMiddleware.js';
 import {
@@ -14,6 +15,7 @@ import {
 
 const adminRouter = express.Router();
 
+adminRouter.get('/blacklist', [auth, adminOnly], getBlacklistedBooks);
 adminRouter.delete('/reviews/:reviewId', [auth, adminOnly], adminRemoveReview);
 adminRouter.post('/books/:bookOlid', [auth, adminOnly], blacklistBook);
 adminRouter.delete(

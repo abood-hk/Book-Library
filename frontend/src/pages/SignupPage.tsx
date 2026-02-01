@@ -50,10 +50,13 @@ const Signup = () => {
       .post<IAuthResponse>('/users/signup', {
         email: email.trim(),
         password,
+        username,
       })
       .then((res) => {
+        const payload = JSON.parse(atob(res.data.accessToken.split('.')[1]));
         setAuth({
           accessToken: res.data.accessToken,
+          user: { role: payload.role },
         });
         if (from) navigate(from, { replace: true });
         else navigate('/', { replace: true });

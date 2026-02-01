@@ -24,6 +24,7 @@ import {
   removeReview,
   getReviews,
   updateReview,
+  getMyReviews,
 } from '../controllers/reviewController.js';
 import auth from '../middleware/authMiddleware.js';
 
@@ -47,6 +48,7 @@ usersRouter.get('/favouritesIds', auth, getFavouritesIds);
 usersRouter.post('/favourites/:bookId', auth, addToFavourites);
 usersRouter.delete('/favourites/:bookId', auth, removeFromFavourites);
 
+usersRouter.get('/myreviews', auth, getMyReviews);
 usersRouter.get('/reviews/:bookId', getReviews);
 usersRouter.post(
   '/reviews/:bookId',
