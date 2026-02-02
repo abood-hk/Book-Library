@@ -128,6 +128,39 @@
     }
   }
 }
+@layer components {
+  .role-btn {
+    @apply text-xs font-semibold px-3 py-1 rounded-full
+           transition-all duration-200
+           inline-flex items-center justify-center;
+    border: none;
+    background: none;
+    white-space: nowrap;
+  }
+
+  .role-btn.promote {
+    background-color: rgb(var(--primary));
+    color: white;
+  }
+
+  .role-btn.promote:hover {
+    background-color: rgb(var(--primary) / 0.85);
+  }
+
+  .role-btn.demote {
+    background-color: rgb(220 38 38);
+    color: white;
+  }
+
+  .role-btn.demote:hover {
+    background-color: rgb(185 28 28);
+  }
+
+  .role-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
 
 @layer components {
   .categories-title {

@@ -48,7 +48,7 @@ export const addReview = async (req: Request, res: Response) => {
       rating,
       content,
     });
-    await review.populate('user', 'username');
+    await review.populate('user');
     return res.status(201).json({ message: 'Review added', review });
   } catch (err) {
     if (
@@ -87,7 +87,7 @@ export const removeReview = async (req: Request, res: Response) => {
     const review = await ReviewsModel.findOneAndDelete({
       user: user._id,
       book: book._id,
-    }).populate('user', 'username');
+    }).populate('user');
 
     if (!review) {
       return res.status(404).json({ message: 'Review not found' });
@@ -116,7 +116,7 @@ export const getReviews = async (req: Request, res: Response) => {
 
     const reviews = await ReviewsModel.find({ book: book._id })
       .sort({ createdAt: -1 })
-      .populate('user', 'username');
+      .populate('user');
     return res.status(200).json({ reviews });
   } catch {
     return res.status(500).json({ message: 'Server error' });
@@ -147,7 +147,7 @@ export const updateReview = async (req: Request, res: Response) => {
       { user: user._id, book: book._id },
       { rating, content },
       { new: true, runValidators: true },
-    ).populate('user', 'username');
+    ).populate('user');
 
     if (!review) {
       return res.status(404).json({ message: 'Review not found' });

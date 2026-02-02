@@ -10,15 +10,16 @@ export const promoteToAdmin = async (req: Request, res: Response) => {
   }
 
   try {
-    const result = await UserModel.updateOne(
+    const result = await UserModel.findOneAndUpdate(
       { _id: userId, role: 'user' },
       { role: 'admin' },
+      { new: true },
     );
 
-    if (result.matchedCount === 0) {
+    if (!result) {
       return res.status(409).json({ message: 'User cannot be promoted' });
     }
-    return res.sendStatus(204);
+    return res.status(200).json({ user: result });
   } catch {
     return res.status(500).json({ message: 'Server error' });
   }
@@ -32,16 +33,17 @@ export const demoteAdmin = async (req: Request, res: Response) => {
   }
 
   try {
-    const result = await UserModel.updateOne(
+    const result = await UserModel.findOneAndUpdate(
       { _id: userId, role: 'admin' },
       { role: 'user' },
+      { new: true },
     );
 
-    if (result.matchedCount === 0) {
+    if (!result) {
       return res.status(409).json({ message: 'User can not be demoted' });
     }
 
-    return res.sendStatus(204);
+    return res.status(200).json({ user: result });
   } catch {
     return res.status(500).json({ message: 'Server error' });
   }

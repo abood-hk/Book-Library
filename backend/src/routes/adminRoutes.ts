@@ -24,7 +24,11 @@ adminRouter.delete(
   removeFromBlacklist,
 );
 
-adminRouter.put('/users/:userId', [auth, superAdminOnly], promoteToAdmin);
-adminRouter.put('/users/:userId', [auth, superAdminOnly], demoteAdmin);
+adminRouter.put(
+  '/users/promote/:userId',
+  [auth, superAdminOnly],
+  promoteToAdmin,
+);
+adminRouter.put('/users/demote/:userId', [auth, superAdminOnly], demoteAdmin);
 
 export default adminRouter;

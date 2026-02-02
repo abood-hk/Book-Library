@@ -20,7 +20,12 @@ const SignoutButton = () => {
   return (
     <>
       <button
-        className="cursor-pointer"
+        className="
+        px-3 py-2 rounded-md text-sm font-medium transition
+        text-[rgb(var(--text-muted))]
+        hover:text-[rgb(var(--primary))]
+        hover:bg-[rgb(var(--bg-muted))] border-0
+      "
         onClick={(e) => {
           e.preventDefault();
           signout();

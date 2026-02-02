@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import ReviewsModel from '../models/Reviews.js';
 import BooksModel from '../models/Book.js';
 import BlacklistModel from '../models/Blacklist.js';
+import FavouriteModel from '../models/Favourites.js';
 
 export const getBlacklistedBooks = async (req: Request, res: Response) => {
   try {
@@ -61,6 +62,13 @@ export const blacklistBook = async (req: Request, res: Response) => {
       await session.abortTransaction();
       return res.status(409).json({ message: 'Book already blacklisted' });
     }
+
+    const fullBook = await BooksModel.findOne({ olid: bookOlid }).session(
+      session,
+    );
+
+    await FavouriteModel.deleteMany({ book: fullBook?._id }).session(session);
+    await ReviewsModel.deleteMany({ book: fullBook?._id }).session(session);
 
     await BlacklistModel.create([{ ...book, addedBy: user._id }], { session });
     await BooksModel.deleteOne({ olid: bookOlid }).session(session);

@@ -11,6 +11,7 @@ import { Link, useNavigate } from 'react-router-dom';
 type User = {
   username: string;
   _id: string;
+  role: 'user' | 'admin' | 'super admin';
 };
 
 type Review = {
@@ -21,6 +22,10 @@ type Review = {
   updatedAt: Date;
   user: User;
 };
+
+interface IApiRoleResponse {
+  user: User;
+}
 
 interface IApiReviewResponse {
   review: Review;
@@ -45,7 +50,9 @@ const BookDetails = () => {
   const [loadingDelete, setLoadingDelete] = useState(false);
   const [editing, setEditing] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [adminDelete, setAdminDelete] = useState(false);
+  const [roleLoadingUserId, setRoleLoadingUserId] = useState<string | null>(
+    null,
+  );
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -114,6 +121,39 @@ const BookDetails = () => {
     return userId === review.user._id;
   };
 
+  const changeRole = (user: User) => {
+    setRoleLoadingUserId(user._id);
+    let action;
+    if (user.role === 'admin') {
+      action = 'demote';
+    } else if (user.role === 'user') {
+      action = 'promote';
+    }
+    axiosPrivate
+      .put<IApiRoleResponse>(`/admin/users/${action}/${user._id}`)
+      .then((res) => {
+        setReviews((prev) =>
+          prev.map((review) =>
+            review.user._id === user._id
+              ? {
+                  ...review,
+                  user: {
+                    ...review.user,
+                    role: res.data.user.role,
+                  },
+                }
+              : review,
+          ),
+        );
+      })
+      .catch((err) => {
+        console.error(err);
+      })
+      .finally(() => {
+        setRoleLoadingUserId(null);
+      });
+  };
+
   const submitReview = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -121,50 +161,22 @@ const BookDetails = () => {
 
     if (existingReview) {
       setError(
-        'You’ve already reviewed this book. You can edit or delete your existing review.',
+        'You have already reviewed this book. You can edit or delete your existing review.',
       );
       return;
     }
 
-    if (rating === null || rating === undefined) {
-      setError('Please select a rating before submitting your review.');
+    const validateError = validateReview();
+    if (validateError) {
+      setError(validateError);
       return;
-    }
-
-    if (typeof rating !== 'number' || Number.isNaN(rating)) {
-      setError('Invalid rating value. Please choose a rating from 1 to 5.');
-      return;
-    }
-
-    if (!Number.isInteger(rating)) {
-      setError('Rating must be a whole number between 1 and 5.');
-      return;
-    }
-
-    if (rating < 1 || rating > 5) {
-      setError('Please choose a rating between 1 and 5 stars.');
-      return;
-    }
-
-    if (content) {
-      if (typeof content !== 'string') {
-        setError('Invalid comment format. Please try again.');
-        return;
-      }
-
-      if (content.trim().length < 1 || content.length > 700) {
-        setError(
-          'Your review is too long. Please keep it under 700 characters.',
-        );
-        return;
-      }
     }
 
     setError(null);
     setLoading(true);
     axiosPrivate
       .post<IApiReviewResponse>(`/users/reviews/${olid}`, {
-        content: content ? content : '',
+        content: content || '',
         rating,
       })
       .then((res) => {
@@ -188,38 +200,10 @@ const BookDetails = () => {
   const updateReview = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (rating === null || rating === undefined) {
-      setError('Please select a rating before submitting your review.');
+    const validateError = validateReview();
+    if (validateError) {
+      setError(validateError);
       return;
-    }
-
-    if (typeof rating !== 'number' || Number.isNaN(rating)) {
-      setError('Invalid rating value. Please choose a rating from 1 to 5.');
-      return;
-    }
-
-    if (!Number.isInteger(rating)) {
-      setError('Rating must be a whole number between 1 and 5.');
-      return;
-    }
-
-    if (rating < 1 || rating > 5) {
-      setError('Please choose a rating between 1 and 5 stars.');
-      return;
-    }
-
-    if (content) {
-      if (typeof content !== 'string') {
-        setError('Invalid comment format. Please try again.');
-        return;
-      }
-
-      if (content.trim().length < 1 || content.length > 700) {
-        setError(
-          'Your review is too long. Please keep it under 700 characters.',
-        );
-        return;
-      }
     }
 
     if (ratingRef.current === rating && contentRef.current === content) {
@@ -235,7 +219,7 @@ const BookDetails = () => {
     setLoading(true);
     axiosPrivate
       .put<IApiReviewResponse>(`/users/reviews/${olid}`, {
-        content: content ? content : '',
+        content: content || '',
         rating,
       })
       .then((res) => {
@@ -290,7 +274,8 @@ const BookDetails = () => {
   };
 
   const adminDeleteReview = (reviewId: string) => {
-    setAdminDelete(true);
+    setLoadingDelete(true);
+
     axiosPrivate
       .delete<IApiReviewResponse>(`/admin/reviews/${reviewId}`)
       .then((res) => {
@@ -327,9 +312,40 @@ const BookDetails = () => {
   const cancelEditing = () => {
     setContent('');
     setRating(0);
+    contentRef.current = null;
+    ratingRef.current = null;
     setEditing(false);
   };
 
+  const validateReview = (): string | null => {
+    if (rating === null || rating === undefined) {
+      return 'Please select a rating before submitting your review.';
+    }
+
+    if (typeof rating !== 'number' || Number.isNaN(rating)) {
+      return 'Invalid rating value. Please choose a rating from 1 to 5.';
+    }
+
+    if (!Number.isInteger(rating)) {
+      return 'Rating must be a whole number between 1 and 5.';
+    }
+
+    if (rating < 1 || rating > 5) {
+      return 'Please choose a rating between 1 and 5 stars.';
+    }
+
+    if (content) {
+      if (typeof content !== 'string') {
+        return 'Invalid comment format. Please try again.';
+      }
+
+      if (content.trim().length < 1 || content.length > 700) {
+        return 'Your review is too long. Please keep it under 700 characters.';
+      }
+    }
+
+    return null;
+  };
   useEffect(() => {
     if (!error) return;
 
@@ -346,7 +362,12 @@ const BookDetails = () => {
   }, [toastMessage]);
 
   useEffect(() => {
-    api.get(`/books/${olid}`).then((res) => setBook(res.data));
+    api
+      .get(`/books/${olid}`)
+      .then((res) => setBook(res.data))
+      .catch((err) => {
+        console.error('Error fetching book:', err);
+      });
   }, [olid]);
 
   useEffect(() => {
@@ -497,6 +518,7 @@ const BookDetails = () => {
                 rows={3}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
+                disabled={loading}
                 placeholder="Write your thoughts about this book..."
               />
 
@@ -543,7 +565,30 @@ const BookDetails = () => {
             ) : (
               <div className="reviews-list">
                 {reviews.map((review) => (
-                  <div key={review.user._id} className="review-card">
+                  <div key={review._id} className="review-card">
+                    {auth.user?.role === 'super admin' &&
+                      review.user.role !== 'super admin' && (
+                        <button
+                          className={`role-btn ${
+                            review.user.role === 'admin' ? 'demote' : 'promote'
+                          }`}
+                          disabled={roleLoadingUserId === review.user._id}
+                          onClick={() => changeRole(review.user)}
+                        >
+                          {roleLoadingUserId !== review.user._id &&
+                            review.user.role === 'admin' &&
+                            'Demote'}
+                          {roleLoadingUserId === review.user._id &&
+                            review.user.role === 'admin' &&
+                            'Demoting...'}
+                          {roleLoadingUserId !== review.user._id &&
+                            review.user.role === 'user' &&
+                            'Promote'}
+                          {roleLoadingUserId === review.user._id &&
+                            review.user.role === 'user' &&
+                            'Promoting...'}
+                        </button>
+                      )}
                     <div className="review-header">
                       <div>
                         <p className="review-user">{review.user.username}</p>
@@ -559,18 +604,14 @@ const BookDetails = () => {
                         <div className="review-controls">
                           {myReview(review) && (
                             <button onClick={() => startEditing(review)}>
-                              Edit
+                              {editing ? 'Editing...' : 'Edit'}
                             </button>
                           )}
 
                           <button
                             className="danger"
                             onClick={() => {
-                              setAdminDelete(
-                                auth.user?.role === 'admin' ||
-                                  auth.user?.role === 'super admin',
-                              );
-                              setConfirmDeleteId(review.user._id);
+                              setConfirmDeleteId(review._id);
                             }}
                           >
                             Delete
@@ -579,16 +620,22 @@ const BookDetails = () => {
                       )}
                     </div>
 
-                    {confirmDeleteId === review.user._id && (
+                    {confirmDeleteId === review._id && (
                       <div className="review-confirm">
-                        <p>Delete Your review?</p>
+                        <p>
+                          {myReview(review)
+                            ? 'Delete your review?'
+                            : 'Delete this review?'}
+                        </p>
                         <div>
                           <button
                             disabled={loadingDelete}
                             onClick={() => {
-                              if (adminDelete) {
+                              const isAdmin =
+                                auth.user?.role === 'admin' ||
+                                auth.user?.role === 'super admin';
+                              if (isAdmin) {
                                 adminDeleteReview(review._id);
-                                setAdminDelete(false);
                               } else {
                                 deleteReview();
                               }
@@ -600,7 +647,6 @@ const BookDetails = () => {
                           <button
                             disabled={loadingDelete}
                             onClick={() => {
-                              setAdminDelete(false);
                               setConfirmDeleteId(null);
                             }}
                           >
