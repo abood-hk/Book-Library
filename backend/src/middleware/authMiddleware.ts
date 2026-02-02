@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import { IAccessPayload } from '../interfaces/IPayload';
-import UserModel from '../models/User';
+import { IAccessPayload } from '../interfaces/IPayload.js';
+import UserModel from '../models/User.js';
 
 dotenv.config();
 

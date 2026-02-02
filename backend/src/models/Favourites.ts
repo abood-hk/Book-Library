@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { IBook } from './Book';
+import { IBook } from './Book.js';
 
 interface IFavourites extends Document {
   user: mongoose.Types.ObjectId;

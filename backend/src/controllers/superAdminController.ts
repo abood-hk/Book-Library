@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
-import UserModel from '../models/User';
+import UserModel from '../models/User.js';
 
 export const promoteToAdmin = async (req: Request, res: Response) => {
   const { userId } = req.params;
