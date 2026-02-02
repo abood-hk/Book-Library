@@ -4,8 +4,8 @@ Book Library API is a full-stack web application for browsing books, managing fa
 
 ## 🌐 Live Demo
 
-- **Frontend:** _Add your frontend URL here_
-- **API Base URL:** _Add your API URL here_
+- **Frontend:** https://book-library-two-sigma.vercel.app/books
+- **API Base URL:**(https://book-library-api-r7bv.onrender.com)
 
 ## 📁 Project Structure
 
