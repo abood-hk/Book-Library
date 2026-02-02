@@ -430,7 +430,7 @@ const Books = () => {
       )}
       <div className="mt-10">
         {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-          (num, i, nums) => {
+          (num, _, nums) => {
             if (num - page > 2 || num - page < -2) return null;
 
             const paginationButtonSty = `
