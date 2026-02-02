@@ -10,13 +10,25 @@ import {
 } from '../services/tokenGeneration.js';
 import { IRefreshPayload } from '../interfaces/IPayload.js';
 
+interface IUser {
+  _id: string;
+  username: string;
+  email: string;
+  password: string;
+  role: 'user' | 'admin' | 'super admin';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 dotenv.config();
 
 export const loginUser = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
-    const user = await userModel.findOne({ email }).select('+password');
+    const user = (await userModel
+      .findOne({ email })
+      .select('+password')) as IUser | null;
 
     if (!user) {
       return res.status(400).json({ message: 'Email or password is wrong' });
@@ -61,11 +73,11 @@ export const signupUser = async (req: Request, res: Response) => {
   }
   const hashedPassword = await bcrypt.hash(password, 11);
   try {
-    const user = await userModel.create({
+    const user = (await userModel.create({
       email,
       username,
       password: hashedPassword,
-    });
+    })) as IUser;
 
     const accessToken = genAccessToken({
       _id: user._id.toString(),
@@ -148,7 +160,7 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
       process.env.REFRESH_TOKEN_SECRET,
     ) as IRefreshPayload;
 
-    const user = await userModel.findById(payload._id);
+    const user = (await userModel.findById(payload._id)) as IUser | null;
 
     if (!user) {
       console.log('user not found');
