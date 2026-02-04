@@ -179,6 +179,8 @@ book-library/
 ## 💡 Features
 
 - ✅ Browse books with search/filter
+- ✅ Seeded with 5000 books fetched from the Open Library API
+- ✅ When you search a book that's not in the database, it is fetched on-demand from the Open Library API and saved
 - ✅ User signup & login with JWT (access + refresh)
 - ✅ Favourite books and view favourites list
 - ✅ Add, edit, and delete reviews with rating
