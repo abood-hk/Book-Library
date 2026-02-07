@@ -1,6 +1,7 @@
 import axios from 'axios';
 import BooksModel from '../models/Book.js';
 import BlacklistModel from '../models/Blacklist.js';
+import normalizeCategories from './normalizeCategories.js';
 
 interface OpenLibraryDoc {
   key: string;
@@ -109,6 +110,8 @@ const fetchBookIfNotFound = async (query: string) => {
       new AbortController().signal,
     );
 
+    const normalizedCategories = normalizeCategories(subjects.slice(0, 10));
+
     const newBook = await BooksModel.findOneAndUpdate(
       { olid: workOlid },
       {
@@ -120,7 +123,7 @@ const fetchBookIfNotFound = async (query: string) => {
           primaryEditionOlid: editionKeys[0] || '',
           cover_i: doc.cover_i || null,
           description,
-          categories: subjects.slice(0, 5),
+          categories: normalizedCategories,
         },
       },
       { new: true, upsert: true },
