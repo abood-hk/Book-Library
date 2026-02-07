@@ -179,12 +179,21 @@ const Show = ({ page }: ShowProps) => {
         {books.length === 0 && !loading && auth.accessToken && (
           <h2>{message}</h2>
         )}
-        <div className="grid grid-cols-3 gap-7 ">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3  gap-7">
           {books.map((book) => (
-            <Link key={book.olid} to={`/books/${book.olid}`}>
-              <div className=" ">
-                <div className="relative">
-                  <img className="w-40 m-auto" src={fetchCover(book)} alt="" />
+            <Link
+              key={book.olid}
+              state={{ from: location }}
+              to={`/books/${book.olid}`}
+              className="h-full"
+            >
+              <div className="book-card pt-2">
+                <div className="book-image-section pb-2">
+                  <img
+                    src={fetchCover(book)}
+                    alt={book.title}
+                    className="book-image"
+                  />
 
                   <div
                     onClick={(e) => {
@@ -196,34 +205,28 @@ const Show = ({ page }: ShowProps) => {
                         addToLiked(book.olid);
                       }
                     }}
-                    className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center cursor-pointer"
+                    className="book-heart"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      className={`w-6 h-6 transition-transform duration-200 ${
-                        liked.includes(book.olid) ? 'scale-125' : ''
-                      }`}
-                    >
+                    <svg viewBox="0 0 24 24" className="heart-icon">
                       <path
-                        d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 
-           4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 
-           14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 
-           6.86-8.55 11.54L12 21.35z"
-                        fill={
-                          liked.includes(book.olid)
-                            ? 'rgb(var(--primary))'
-                            : 'none'
-                        }
-                        stroke="rgb(var(--primary))"
-                        strokeWidth="2"
+                        d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5
+                   2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09
+                   C13.09 3.81 14.76 3 16.5 3
+                   19.58 3 22 5.42 22 8.5
+                   c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                        className={liked.includes(book.olid) ? 'active' : ''}
                       />
                     </svg>
                   </div>
                 </div>
-                <h2>{book.title}</h2>
-                <p>{book.author_name}</p>
-                <h3>{uniqueCategories(book.categories).join(', ')}</h3>
+
+                <div className="book-info-section">
+                  <h2 className="book-title">{book.title}</h2>
+                  <p className="book-author">{book.author_name}</p>
+                  <h3 className="book-categories">
+                    {uniqueCategories(book.categories).join(', ')}
+                  </h3>
+                </div>
               </div>
             </Link>
           ))}

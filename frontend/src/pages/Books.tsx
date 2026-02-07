@@ -391,13 +391,13 @@ const Books = () => {
       {loading && <h2>Loading...</h2>}
       {!loading && books.length === 0 && (
         <p className="text-center">
-          Oops! We couldn’t find any books matching your search or selected
+          Oops! We couldn't find any books matching your search or selected
           categories. Try different keywords or filters.
         </p>
       )}
       {!loading && (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-7">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3  gap-7">
             {books.map((book) => (
               <Link
                 key={book.olid}
