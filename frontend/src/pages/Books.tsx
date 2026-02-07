@@ -349,10 +349,8 @@ const Books = () => {
         )}
 
         <div
-          className={`categories-list grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 mt-2 overflow-hidden transition-all duration-500 ease-in-out ${
-            categoriesExpanded
-              ? 'max-h-[500px] opacity-100'
-              : 'max-h-0 opacity-0'
+          className={`categories-list grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 mt-2 transition-all duration-300 ${
+            categoriesExpanded ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'
           }`}
         >
           {sortedCategories.map((cat) => {
@@ -456,7 +454,7 @@ const Books = () => {
                     <h2 className="book-title">{book.title}</h2>
                     <p className="book-author">{book.author_name}</p>
                     <h3 className="book-categories">
-                      {uniqueCategories(book.categories).join(', ')}
+                      {uniqueCategories(book.categories).join(', ') || 'Other'}
                     </h3>
                   </div>
                 </div>

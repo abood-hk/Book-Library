@@ -495,10 +495,7 @@ const BookDetails = () => {
           <h2>{book.title}</h2>
           <p className="book-author">{book.author_name}</p>
           <p className="book-categories">
-            <span className={!book.description ? 'opacity-80 italic' : ''}>
-              {uniqueCategories(book.categories).join(', ') ||
-                'No Available Categories.'}
-            </span>
+            {uniqueCategories(book.categories).join(', ') || 'Other'}
           </p>
         </div>
 
