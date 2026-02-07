@@ -14,7 +14,7 @@ const ToggleThemes = () => {
           root.classList.toggle('dark', next);
           setIsDark(next);
         }}
-        className="fixed top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center text-lg cursor-pointer"
+        className="fixed top-4 right-4 w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center text-lg cursor-pointer z-50 bg-white dark:bg-gray-800 shadow-lg"
       >
         {isDark ? '☀️' : '🌙'}
       </button>

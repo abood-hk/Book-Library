@@ -43,6 +43,7 @@ const Books = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [pending, setPending] = useState<Set<string>>(new Set());
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [categoriesExpanded, setCategoriesExpanded] = useState(false);
 
   const { auth } = useAuth();
 
@@ -251,6 +252,10 @@ const Books = () => {
     return () => clearTimeout(t);
   }, [toastMessage]);
 
+  const sortedCategories = [...GENRES]
+    .filter((cat) => cat !== 'Other')
+    .sort((a, b) => a.localeCompare(b));
+
   if (error) return <p>{error}</p>;
 
   return (
@@ -265,6 +270,7 @@ const Books = () => {
           </span>
         </div>
       )}
+
       <div className="books-toolbar">
         <div className="toolbar-item left">
           <label htmlFor="select-sort">Sort By</label>
@@ -282,7 +288,9 @@ const Books = () => {
         </div>
 
         <div className="toolbar-item center">
+          <label htmlFor="search">Search</label>
           <input
+            id="search"
             type="text"
             placeholder="Search by author or title..."
             value={search}
@@ -306,28 +314,28 @@ const Books = () => {
           </select>
         </div>
       </div>
-      <h3 className="categories-title">Filter By Category</h3>
+      <div className="categories-wrapper mb-6">
+        <div
+          className="categories-header cursor-pointer flex items-center justify-center gap-2 select-none"
+          onClick={() => setCategoriesExpanded((prev) => !prev)}
+        >
+          <span>Filter By Category</span>
+          <span
+            className={`transition-transform duration-300 ${categoriesExpanded ? 'rotate-180' : ''}`}
+          >
+            ▼
+          </span>
+        </div>
 
-      <div className="categories-container">
-        <div className="categories-list">
-          {GENRES.map((cat) => {
-            if (cat === 'Other') return null;
-
-            return (
-              <label
-                key={cat}
-                className={`category-chip ${
-                  selectedCategories.includes(cat) ? 'active' : ''
-                }`}
-              >
+        {selectedCategories.length > 0 && (
+          <div className="selected-categories flex flex-wrap gap-2 mt-2 justify-center">
+            {selectedCategories.map((cat) => (
+              <label key={cat} className="category-chip active">
                 <input
                   type="checkbox"
-                  checked={selectedCategories.includes(cat)}
-                  onChange={(e) => {
-                    const next = e.target.checked
-                      ? [...selectedCategories, cat]
-                      : selectedCategories.filter((c) => c !== cat);
-
+                  checked
+                  onChange={() => {
+                    const next = selectedCategories.filter((c) => c !== cat);
                     updateSearchParams({
                       categories: next.length ? next.join(',') : null,
                       page: 1,
@@ -336,40 +344,73 @@ const Books = () => {
                 />
                 {cat}
               </label>
+            ))}
+          </div>
+        )}
+
+        <div
+          className={`categories-list grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 mt-2 overflow-hidden transition-all duration-500 ease-in-out ${
+            categoriesExpanded
+              ? 'max-h-[500px] opacity-100'
+              : 'max-h-0 opacity-0'
+          }`}
+        >
+          {sortedCategories.map((cat) => {
+            if (selectedCategories.includes(cat)) return null; // already shown above
+            return (
+              <label key={cat} className="category-chip">
+                <input
+                  type="checkbox"
+                  checked={selectedCategories.includes(cat)}
+                  onChange={(e) => {
+                    const next = e.target.checked
+                      ? [...selectedCategories, cat]
+                      : selectedCategories.filter((c) => c !== cat);
+                    updateSearchParams({ categories: next.join(','), page: 1 });
+                  }}
+                />
+                {cat}
+              </label>
             );
           })}
         </div>
-
-        {selectedCategories.length > 0 && (
-          <button
-            className="clear-categories  cursor-pointer"
-            onClick={(e) => {
-              e.preventDefault();
-              updateSearchParams({ categories: null, page: 1 });
-            }}
-          >
-            Clear all
-          </button>
-        )}
       </div>
 
+      {selectedCategories.length > 0 && (
+        <button
+          className="clear-categories cursor-pointer mb-5"
+          onClick={(e) => {
+            e.preventDefault();
+            updateSearchParams({ categories: null, page: 1 });
+          }}
+        >
+          Clear all
+        </button>
+      )}
+
       {loading && <h2>Loading...</h2>}
+      {!loading && books.length === 0 && (
+        <p className="text-center">
+          Oops! We couldn’t find any books matching your search or selected
+          categories. Try different keywords or filters.
+        </p>
+      )}
       {!loading && (
         <>
-          {books.length === 0 && <h2>No book found</h2>}
-          <div className="grid grid-cols-3 gap-7 ">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-7">
             {books.map((book) => (
               <Link
                 key={book.olid}
                 state={{ from: location }}
                 to={`/books/${book.olid}`}
+                className="h-full"
               >
-                <div className=" ">
-                  <div className="relative">
+                <div className="book-card pt-2">
+                  <div className="book-image-section pb-2">
                     <img
-                      className="w-40 m-auto"
                       src={fetchCover(book)}
-                      alt=""
+                      alt={book.title}
+                      className="book-image"
                     />
 
                     <div
@@ -382,30 +423,20 @@ const Books = () => {
                           addToLiked(book.olid);
                         }
                       }}
-                      className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center cursor-pointer"
+                      className="book-heart"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        className={`w-6 h-6 transition-transform duration-200 ${
-                          liked.includes(book.olid) ? 'scale-125' : ''
-                        }`}
-                      >
+                      <svg viewBox="0 0 24 24" className="heart-icon">
                         <path
-                          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 
-           4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 
-           14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 
-           6.86-8.55 11.54L12 21.35z"
-                          fill={
-                            liked.includes(book.olid)
-                              ? 'rgb(var(--primary))'
-                              : 'none'
-                          }
-                          stroke="rgb(var(--primary))"
-                          strokeWidth="2"
+                          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5
+                   2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09
+                   C13.09 3.81 14.76 3 16.5 3
+                   19.58 3 22 5.42 22 8.5
+                   c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                          className={liked.includes(book.olid) ? 'active' : ''}
                         />
                       </svg>
                     </div>
+
                     {(auth.user?.role === 'admin' ||
                       auth.user?.role === 'super admin') && (
                       <button
@@ -413,15 +444,21 @@ const Books = () => {
                           e.preventDefault();
                           blackList(book.olid);
                         }}
-                        className="absolute top-2 left-2 px-3 py-1 text-xs font-semibold text-white bg-gray-800/80 backdrop-blur-sm rounded-full shadow-md hover:bg-gray-700/80 transition-colors"
+                        className="absolute top-2 left-2 px-3 py-1 text-xs font-semibold
+                         text-white bg-gray-800/80 rounded-full"
                       >
                         Blacklist
                       </button>
                     )}
                   </div>
-                  <h2>{book.title}</h2>
-                  <p>{book.author_name}</p>
-                  <h3>{uniqueCategories(book.categories).join(', ')}</h3>
+
+                  <div className="book-info-section">
+                    <h2 className="book-title">{book.title}</h2>
+                    <p className="book-author">{book.author_name}</p>
+                    <h3 className="book-categories">
+                      {uniqueCategories(book.categories).join(', ')}
+                    </h3>
+                  </div>
                 </div>
               </Link>
             ))}
@@ -455,8 +492,17 @@ const Books = () => {
                 key="next"
                 onClick={() => updateSearchParams({ page: page + 1 })}
                 className={activePaginationButtonSty()}
+                aria-label="Next page"
               >
-                {'->'}
+                <svg
+                  className="w-4 h-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M9 5l7 7-7 7" />
+                </svg>
               </button>
             );
 
@@ -465,8 +511,17 @@ const Books = () => {
                 key="prev"
                 onClick={() => updateSearchParams({ page: page - 1 })}
                 className={activePaginationButtonSty()}
+                aria-label="Previous page"
               >
-                {'<-'}
+                <svg
+                  className="w-4 h-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M15 19l-7-7 7-7" />
+                </svg>
               </button>
             );
 
@@ -475,8 +530,18 @@ const Books = () => {
                 key="first"
                 onClick={() => updateSearchParams({ page: 1 })}
                 className={activePaginationButtonSty()}
+                aria-label="First page"
               >
-                {'<<-'}
+                <svg
+                  className="w-4 h-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M11 19l-7-7 7-7" />
+                  <path d="M20 19l-7-7 7-7" />
+                </svg>
               </button>
             );
 
@@ -485,8 +550,18 @@ const Books = () => {
                 key="last"
                 onClick={() => updateSearchParams({ page: nums.length })}
                 className={activePaginationButtonSty()}
+                aria-label="Last page"
               >
-                {'->>'}
+                <svg
+                  className="w-4 h-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M4 5l7 7-7 7" />
+                  <path d="M13 5l7 7-7 7" />
+                </svg>
               </button>
             );
 
@@ -511,7 +586,10 @@ const Books = () => {
       </div>
       {showScrollTop && (
         <button
-          className="scroll-top cursor-pointer fixed bottom-6 right-6 z-50 p-3 rounded-full bg-primary shadow-lg hover:scale-110 transition-transform"
+          className="scroll-top fixed bottom-6 right-6 z-50 p-3 rounded-full
+             bg-primary shadow-lg
+             animate-[float-up_1.6s_ease-in-out_infinite]
+             hover:scale-110 transition-transform"
           aria-label="Scroll to top"
           onClick={(e) => {
             e.preventDefault();
@@ -520,7 +598,7 @@ const Books = () => {
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="w-5 h-5"
+            className="w-5 h-5 text-white"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"

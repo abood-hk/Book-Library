@@ -13,7 +13,8 @@ interface IBookQuery {
 
 interface IBookFilter {
   categories?: {
-    $in: RegExp[];
+    $in?: RegExp[];
+    $all?: RegExp[];
   };
   $or?: { [key: string]: { $regex: RegExp; $options?: string } }[];
 }
@@ -32,7 +33,7 @@ export const getAllBooks = async (
   if (categoriesQuery && categoriesQuery !== '') {
     const categoriesArray = categoriesQuery.split(',').map((c) => c.trim());
     filter.categories = {
-      $in: categoriesArray.map((cat) => new RegExp(`^${cat}$`, 'i')),
+      $all: categoriesArray.map((cat) => new RegExp(`^${cat}$`, 'i')),
     };
   }
 

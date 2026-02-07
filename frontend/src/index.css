@@ -12,10 +12,13 @@
   }
 
   html,
-  body,
-  #root {
-    height: 100svh; /* full viewport height, mobile-friendly */
+  body {
+    height: 100%;
     margin: 0;
+  }
+
+  #root {
+    min-height: 100svh;
   }
 
   .dark {
@@ -34,9 +37,17 @@
     @apply antialiased transition-colors duration-300;
   }
 
-  label {
-    @apply text-sm font-medium inline-block min-w-[120px];
-    color: rgb(var(--text-muted));
+  @layer base {
+    label {
+      @apply text-sm font-medium inline-block min-w-[120px];
+      color: rgb(var(--text-muted));
+    }
+
+    .toolbar-item label,
+    .categories-title {
+      color: rgb(var(--text));
+      opacity: 0.9;
+    }
   }
 
   h2 {
@@ -51,6 +62,41 @@
   a {
     color: inherit;
     text-decoration: none;
+  }
+}
+
+@layer components {
+  .categories-wrapper {
+    @apply flex flex-col items-center;
+  }
+
+  .categories-header span {
+    @apply text-sm font-semibold;
+  }
+
+  .categories-list {
+    @apply w-full;
+  }
+
+  .category-chip {
+    @apply rounded-full px-3 py-1 text-sm border transition-colors duration-200 cursor-pointer select-none;
+    border-color: rgb(var(--border));
+    color: rgb(var(--text-muted));
+    background-color: transparent;
+  }
+
+  .category-chip:hover {
+    background-color: rgb(var(--bg-muted));
+  }
+
+  .category-chip.active {
+    background-color: rgb(var(--primary));
+    color: white;
+    border-color: rgb(var(--primary));
+  }
+
+  .category-chip input {
+    @apply absolute inset-0 opacity-0 cursor-pointer;
   }
 }
 
@@ -165,6 +211,8 @@
 @layer components {
   .categories-title {
     @apply mb-3;
+    color: rgb(var(--text));
+    opacity: 0.9;
   }
 
   .categories-container {
@@ -206,6 +254,12 @@
       transform: translateY(0);
     }
   }
+  .book-card {
+    @apply h-full flex flex-col rounded-2xl overflow-hidden
+         border transition hover:-translate-y-1;
+    background-color: rgb(var(--card));
+    border-color: rgb(var(--border));
+  }
 
   .toast {
     position: fixed;
@@ -236,11 +290,41 @@
 
 @layer components {
   .book-details-clean {
-    @apply grid gap-12 lg:grid-cols-2 mt-16;
+    @apply grid gap-8 lg:grid-cols-2 mt-16;
+  }
+
+  @media (max-width: 1024px) {
+    .book-details-clean {
+      @apply grid grid-cols-1 gap-6;
+    }
+
+    .book-right {
+      @apply mt-6;
+      height: auto;
+    }
   }
 
   .book-left {
     @apply flex flex-col items-center text-center gap-3;
+  }
+
+  .book-image-section {
+    @apply relative flex items-center justify-center;
+    height: 240px;
+
+    border-bottom: 2px solid rgb(var(--border));
+  }
+
+  .book-info-section {
+    @apply flex flex-col gap-1 p-4;
+  }
+
+  .book-image {
+    @apply max-h-full max-w-full object-contain;
+  }
+
+  .book-title {
+    @apply text-lg font-semibold leading-snug;
   }
 
   .book-right {
@@ -299,20 +383,18 @@
 @layer components {
   .book-author {
     @apply text-sm font-medium;
-    color: rgb(var(--primary));
-  }
-
-  .book-categories {
-    @apply text-sm;
     color: rgb(var(--text-muted));
   }
 
+  .book-categories {
+    @apply text-sm mt-auto;
+    color: rgb(var(--primary));
+  }
+
   .book-right p {
-    height: 100%;
-    display: grid;
-    place-items: center;
-    @apply text-sm leading-relaxed;
-    color: rgb(var(--text));
+    @apply text-sm leading-relaxed break-words;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -341,7 +423,8 @@
   }
 
   .scroll-top {
-    color: var(--text);
+    background-color: rgb(var(--primary));
+    color: white;
   }
 
   .auth-header {
@@ -466,7 +549,13 @@
 
 @layer components {
   .reviews-section {
-    @apply mt-20 mb-20 lg:col-span-2;
+    @apply mt-12 mb-20;
+  }
+
+  @media (max-width: 640px) {
+    .reviews-section {
+      @apply mt-8;
+    }
   }
 
   .reviews-inner {
@@ -618,9 +707,13 @@
 }
 
 @layer components {
+  .mobile-menu-bg {
+    @apply fixed inset-0 bg-black/20 z-30;
+  }
+
   .grid.grid-cols-3 {
-    @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
-    align-items: stretch;
+    @apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6;
+    gap: 1.75rem;
   }
 
   .grid.grid-cols-3 > a > div {
@@ -686,5 +779,5 @@
 }
 
 #root {
-  @apply max-w-7xl mx-auto px-6;
+  @apply max-w-7xl mx-auto px-6 pb-6;
 }

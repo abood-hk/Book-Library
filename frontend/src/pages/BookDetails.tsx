@@ -318,6 +318,10 @@ const BookDetails = () => {
   };
 
   const validateReview = (): string | null => {
+    if (!auth.user) {
+      return 'Login so you can publish a review.';
+    }
+
     if (rating === null || rating === undefined) {
       return 'Please select a rating before submitting your review.';
     }
